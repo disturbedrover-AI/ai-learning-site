@@ -56,17 +56,6 @@
   --accent-foreground: #0b0b0f;
 }
 
-[data-theme="midnight"] {
-  color-scheme: dark;
-  --background: #0a1124;
-  --surface: #111b35;
-  --foreground: #e6ecff;
-  --muted: #8fa0c8;
-  --border: #1f2c50;
-  --accent: #5eb0ff;
-  --accent-foreground: #06101f;
-}
-
 [data-theme="sand"] {
   color-scheme: light;
   --background: #f8f2e8;

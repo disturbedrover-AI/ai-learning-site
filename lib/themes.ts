@@ -6,7 +6,6 @@
 export const themes = [
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "midnight", label: "Midnight Blue" },
   { id: "sand", label: "Warm Sand" },
   { id: "mist", label: "Mist" },
 ] as const;

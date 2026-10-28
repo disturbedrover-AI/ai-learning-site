@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { themes } from "@/lib/themes";
+import { defaultTheme, themes } from "@/lib/themes";
 
 const options = [{ id: "system", label: "System" }, ...themes];
 
@@ -42,6 +42,11 @@ export function ThemeSwitcher() {
   const mounted = useMounted();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // A saved theme that no longer exists (e.g. it was removed) falls back to the default.
+  useEffect(() => {
+    if (theme && !options.some((o) => o.id === theme)) setTheme(defaultTheme);
+  }, [theme, setTheme]);
 
   useEffect(() => {
     if (!open) return;

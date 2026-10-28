@@ -63,7 +63,7 @@ public/               Static files (images, favicon).
   `bg-surface`, `text-foreground`, `text-muted`, `border-border`, `bg-accent`,
   `text-accent-foreground`). Never hard-code colours like `bg-white` or `#fff`.
 - If a new variable is needed, add it to **every** theme block and to `@theme` in `globals.css`.
-- Check new UI in all themes (Light, Dark, Midnight Blue, Warm Sand, Mist) before finishing.
+- Check new UI in all themes (Light, Dark, Warm Sand, Mist) before finishing.
 
 ## Standing rules
 
