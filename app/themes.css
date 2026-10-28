@@ -1,0 +1,67 @@
+/*
+ * THEMES
+ * ------
+ * Every theme is ONE block of CSS variables, selected by the
+ * `data-theme` attribute on <html>.
+ *
+ * To add a new theme:
+ *   1. Copy any block below, change the name in [data-theme="..."],
+ *      and adjust the colours. Every block must define ALL variables:
+ *        --background          page background
+ *        --surface             cards, panels, menus
+ *        --foreground          main text
+ *        --muted               secondary text
+ *        --border              lines and outlines
+ *        --accent              brand colour: buttons, links, highlights
+ *        --accent-foreground   text placed on top of --accent
+ *   2. Add one line for it in lib/themes.ts so it shows in the switcher.
+ *
+ * Never use raw colours in components. Use the Tailwind classes that map
+ * to these variables (bg-background, bg-surface, text-foreground,
+ * text-muted, border-border, bg-accent, text-accent-foreground).
+ */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #f5f6f8;
+  --foreground: #0f172a;
+  --muted: #5b6475;
+  --border: #e4e7ec;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0b0f;
+  --surface: #16161c;
+  --foreground: #ededf0;
+  --muted: #9a9aa8;
+  --border: #272730;
+  --accent: #8b8cf8;
+  --accent-foreground: #0b0b0f;
+}
+
+[data-theme="midnight"] {
+  color-scheme: dark;
+  --background: #0a1124;
+  --surface: #111b35;
+  --foreground: #e6ecff;
+  --muted: #8fa0c8;
+  --border: #1f2c50;
+  --accent: #5eb0ff;
+  --accent-foreground: #06101f;
+}
+
+[data-theme="sand"] {
+  color-scheme: light;
+  --background: #f8f2e8;
+  --surface: #efe5d4;
+  --foreground: #2e261d;
+  --muted: #76695a;
+  --border: #e0d3bd;
+  --accent: #b1602b;
+  --accent-foreground: #fffaf3;
+}

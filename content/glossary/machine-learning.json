@@ -1,0 +1,6 @@
+{
+  "term": "Machine Learning",
+  "definition": "A way of building AI where the computer learns patterns from examples (data) instead of being given step-by-step rules by a programmer.",
+  "aliases": ["ML"],
+  "related": []
+}
