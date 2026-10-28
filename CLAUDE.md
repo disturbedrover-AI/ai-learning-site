@@ -53,8 +53,10 @@ public/               Static files (images, favicon).
   `--muted`, `--border`, `--accent`, `--accent-foreground`.
 - Themes may also override the shared defaults in the `:root` block at the top of
   `themes.css`: `--font-body`, `--font-heading`, `--hero-gradient`, `--hero-opacity`,
-  `--hero-animation` (keep it slow and subtle; it is switched off for visitors who
-  turn on "reduce motion").
+  `--hero-animation`, `--page-gradient`, `--page-animation`. The hero variables cover
+  only the top section of the home page; the page variables are a full-screen layer
+  behind the whole home page. Keep animations slow and subtle; they are switched off
+  for visitors who turn on "reduce motion".
   Fonts must be loaded with `next/font` in `app/layout.tsx` (with `preload: false`
   if only some themes use them) and referenced by their CSS variable.
 - Don't use `color-mix()` inside theme variables: the CSS build step rewrites it

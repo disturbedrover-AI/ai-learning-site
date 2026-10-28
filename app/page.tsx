@@ -23,6 +23,11 @@ const sections = [
 export default function HomePage() {
   return (
     <>
+      {/* Full-screen background that stays put while scrolling, set per theme by --page-gradient. */}
+      <FadeIn y={0} className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute inset-0 [background:var(--page-gradient)] [animation:var(--page-animation)] motion-reduce:[animation:none]" />
+      </FadeIn>
+
       <section className="relative overflow-hidden">
         {/* Background glow, set per theme by --hero-gradient in themes.css. */}
         <FadeIn y={0} className="pointer-events-none absolute inset-0 -z-10">

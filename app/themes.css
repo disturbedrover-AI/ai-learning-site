@@ -33,6 +33,9 @@
   --hero-opacity: 0.14;
   /* Optional slow movement of the hero gradient (an @keyframes name + timing). */
   --hero-animation: none;
+  /* Optional full-screen background behind the whole home page, and its movement. */
+  --page-gradient: none;
+  --page-animation: none;
 }
 
 :root,
@@ -81,25 +84,29 @@
   --accent-foreground: #ffffff;
   --font-body: var(--font-inter);
   --font-heading: var(--font-figtree);
-  /* Each colour layer is larger than the hero so it can drift (see mist-drift). */
-  --hero-gradient:
-    radial-gradient(ellipse 40% 47% at 15% 15%, #fbcfcc, transparent 70%) 40% 30% / 150% 150% no-repeat,
-    radial-gradient(ellipse 37% 53% at 85% 30%, #d2cffb, transparent 70%) 55% 40% / 150% 150% no-repeat,
-    radial-gradient(ellipse 33% 40% at 75% 85%, #e6f0b4, transparent 70%) 60% 55% / 150% 150% no-repeat,
-    linear-gradient(#f6f6f9, #ffffff);
-  --hero-opacity: 1;
-  --hero-animation: mist-drift 15s ease-in-out infinite alternate;
+  /* Mist uses the full-screen page background instead of the hero glow. */
+  --hero-gradient: none;
+  /*
+   * Each colour is a soft blob in the middle of a layer 3x the screen size.
+   * Moving that layer between 25% and 75% carries the blob from one edge
+   * of the screen to the other (see mist-drift).
+   */
+  --page-gradient:
+    radial-gradient(ellipse 20% 22% at 50% 50%, #fbcfcc, transparent 70%) 70% 70% / 300% 300% no-repeat,
+    radial-gradient(ellipse 18% 24% at 50% 50%, #d2cffb, transparent 70%) 30% 60% / 300% 300% no-repeat,
+    radial-gradient(ellipse 17% 20% at 50% 50%, #e6f0b4, transparent 70%) 40% 30% / 300% 300% no-repeat;
+  --page-animation: mist-drift 15s ease-in-out infinite alternate;
 }
 
-/* Pink, lavender and yellow each wander slowly on their own path. */
+/* Pink, lavender and yellow each wander across the whole screen on their own path. */
 @keyframes mist-drift {
   0% {
-    background-position: 40% 30%, 55% 40%, 60% 55%, 0 0;
+    background-position: 70% 70%, 30% 60%, 40% 30%;
   }
   50% {
-    background-position: 0% 0%, 90% 10%, 20% 90%, 0 0;
+    background-position: 35% 45%, 65% 35%, 60% 65%;
   }
   100% {
-    background-position: 55% 45%, 40% 65%, 85% 45%, 0 0;
+    background-position: 55% 30%, 45% 70%, 30% 50%;
   }
 }
