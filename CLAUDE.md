@@ -52,7 +52,9 @@ public/               Static files (images, favicon).
 - Every theme defines the same variables: `--background`, `--surface`, `--foreground`,
   `--muted`, `--border`, `--accent`, `--accent-foreground`.
 - Themes may also override the shared defaults in the `:root` block at the top of
-  `themes.css`: `--font-body`, `--font-heading`, `--hero-gradient`, `--hero-opacity`.
+  `themes.css`: `--font-body`, `--font-heading`, `--hero-gradient`, `--hero-opacity`,
+  `--hero-animation` (keep it slow and subtle; it is switched off for visitors who
+  turn on "reduce motion").
   Fonts must be loaded with `next/font` in `app/layout.tsx` (with `preload: false`
   if only some themes use them) and referenced by their CSS variable.
 - Don't use `color-mix()` inside theme variables: the CSS build step rewrites it

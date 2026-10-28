@@ -26,7 +26,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         {/* Background glow, set per theme by --hero-gradient in themes.css. */}
         <FadeIn y={0} className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute inset-0 [background:var(--hero-gradient)] [opacity:var(--hero-opacity)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
+          <div className="absolute inset-0 [background:var(--hero-gradient)] [opacity:var(--hero-opacity)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)] [animation:var(--hero-animation)] motion-reduce:[animation:none]" />
         </FadeIn>
 
         <div className="mx-auto max-w-6xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
