@@ -51,13 +51,19 @@ public/               Static files (images, favicon).
 - Themes are CSS variables in `app/themes.css`, selected by `data-theme` on `<html>`.
 - Every theme defines the same variables: `--background`, `--surface`, `--foreground`,
   `--muted`, `--border`, `--accent`, `--accent-foreground`.
+- Themes may also override the shared defaults in the `:root` block at the top of
+  `themes.css`: `--font-body`, `--font-heading`, `--hero-gradient`, `--hero-opacity`.
+  Fonts must be loaded with `next/font` in `app/layout.tsx` (with `preload: false`
+  if only some themes use them) and referenced by their CSS variable.
+- Don't use `color-mix()` inside theme variables: the CSS build step rewrites it
+  into a plain colour. Use a separate opacity variable instead.
 - Adding a theme = one new CSS block in `themes.css` + one line in `lib/themes.ts`.
   No component changes.
 - Components must only use the theme-aware Tailwind classes (`bg-background`,
   `bg-surface`, `text-foreground`, `text-muted`, `border-border`, `bg-accent`,
   `text-accent-foreground`). Never hard-code colours like `bg-white` or `#fff`.
 - If a new variable is needed, add it to **every** theme block and to `@theme` in `globals.css`.
-- Check new UI in all themes (Light, Dark, Midnight Blue, Warm Sand) before finishing.
+- Check new UI in all themes (Light, Dark, Midnight Blue, Warm Sand, Mist) before finishing.
 
 ## Standing rules
 

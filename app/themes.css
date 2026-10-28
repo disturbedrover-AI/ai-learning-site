@@ -16,10 +16,22 @@
  *        --accent-foreground   text placed on top of --accent
  *   2. Add one line for it in lib/themes.ts so it shows in the switcher.
  *
+ * Optional: a theme may also override the shared defaults below
+ * (fonts and hero gradient). If it doesn't, the defaults are used.
+ *
  * Never use raw colours in components. Use the Tailwind classes that map
  * to these variables (bg-background, bg-surface, text-foreground,
  * text-muted, border-border, bg-accent, text-accent-foreground).
  */
+
+/* Shared defaults: any theme block can override these. */
+:root {
+  --font-body: var(--font-geist-sans);
+  --font-heading: var(--font-geist-sans);
+  /* Soft glow behind the home page hero, shown at --hero-opacity. */
+  --hero-gradient: radial-gradient(ellipse 30rem 18rem at 50% 2rem, var(--accent), transparent);
+  --hero-opacity: 0.14;
+}
 
 :root,
 [data-theme="light"] {
@@ -64,4 +76,24 @@
   --border: #e0d3bd;
   --accent: #b1602b;
   --accent-foreground: #fffaf3;
+}
+
+/* Bright and airy: navy accent, lavender-grey panels, pastel wash. */
+[data-theme="mist"] {
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #f3f3f8;
+  --foreground: #0e0f10;
+  --muted: #6e6f74;
+  --border: #dbdae5;
+  --accent: #060348;
+  --accent-foreground: #ffffff;
+  --font-body: var(--font-inter);
+  --font-heading: var(--font-figtree);
+  --hero-gradient:
+    radial-gradient(ellipse 60% 70% at 0% 0%, #fde4e2, transparent 70%),
+    radial-gradient(ellipse 55% 80% at 100% 25%, #e3e2fb, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 85% 100%, #f1f5d9, transparent 70%),
+    linear-gradient(#f6f6f9, #ffffff);
+  --hero-opacity: 1;
 }

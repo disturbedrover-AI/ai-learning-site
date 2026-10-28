@@ -24,9 +24,9 @@ export default function HomePage() {
   return (
     <>
       <section className="relative overflow-hidden">
-        {/* Soft glow in the theme's accent colour. */}
+        {/* Background glow, set per theme by --hero-gradient in themes.css. */}
         <FadeIn y={0} className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-[-12rem] h-[32rem] w-[48rem] -translate-x-1/2 rounded-full bg-accent opacity-[0.12] blur-3xl" />
+          <div className="absolute inset-0 [background:var(--hero-gradient)] [opacity:var(--hero-opacity)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
         </FadeIn>
 
         <div className="mx-auto max-w-6xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
