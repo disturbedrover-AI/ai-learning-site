@@ -41,6 +41,7 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
         [lesson]/     a lesson page.
   news/               News: Posts and Radar tabs (page.tsx), item pages ([slug]/), RSS feed (rss.xml/).
   api/radar/          GET /api/radar: the Radar headlines as JSON.
+  api/keep-alive/     GET /api/keep-alive: daily Supabase keep-alive (Vercel Cron, needs CRON_SECRET).
   tools/              Tool directory (page.tsx) and tool pages ([slug]/).
   lab/                The private Lab: home (page.tsx), entries ([slug]/), editor (new/, [slug]/edit/),
                       members (members/), server actions (actions.tsx).
@@ -86,6 +87,7 @@ lib/
   levels.ts           levelStyle() / hueStyle(): pick a level or course colour for an element.
 supabase/migrations/  SQL to set up the database (run in the Supabase SQL editor).
 proxy.ts              Runs before each request: keeps the Supabase sign-in fresh.
+vercel.json           Vercel settings: the daily keep-alive cron job.
 public/               Static files (images, favicon).
 ```
 
@@ -336,6 +338,9 @@ button and progress stays in the browser.
 - `NEXT_PUBLIC_AUTH_GOOGLE`: Google sign-in is shown unless this is `false`.
 - `NEXT_PUBLIC_AUTH_LINKEDIN`: LinkedIn is hidden until this is `true`.
 - `SHOW_DRAFTS`: show draft courses (and the Draft/Published filter on /learn).
+- `SUPABASE_SECRET_KEY`: the server-side Supabase key (server only, never `NEXT_PUBLIC_`).
+  Used by the daily keep-alive; optional.
+- `CRON_SECRET`: protects `/api/keep-alive` (see "Keep-alive" below). Required on Vercel.
 - `NEXT_PUBLIC_SITE_URL`: the site's public address (used in the RSS feed). Optional on
   Vercel: without it, Vercel's own production address is used (`lib/site.ts`).
 Restart `npm run dev` after changing `.env.local`.
@@ -356,6 +361,15 @@ Restart `npm run dev` after changing `.env.local`.
    (`https://<project>.supabase.co/auth/v1/callback`).
 5. *LinkedIn (later)*: enable "LinkedIn (OIDC)" in the same place with keys from a LinkedIn app,
    then set `NEXT_PUBLIC_AUTH_LINKEDIN=true`.
+
+**Keep-alive**: free Supabase projects pause after a week without activity. `vercel.json`
+has a Vercel Cron job that calls `GET /api/keep-alive` once a day at 06:00 UTC; the route
+(`app/api/keep-alive/route.ts`) does one tiny read on `profiles` (a count, no rows) with
+`SUPABASE_SECRET_KEY` (or the public key if that isn't set). It only answers requests carrying
+`Authorization: Bearer <CRON_SECRET>`, which Vercel adds automatically when `CRON_SECRET` is
+set in the project's environment variables; anything else gets 401. Check runs in Vercel →
+project → Settings → Cron Jobs. To test locally:
+`curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/keep-alive`.
 
 **Data rules** (enforced by the database, not just the site): each user can read and change only
 their own profile and progress. Users can change their profile's name and avatar, never its role.
