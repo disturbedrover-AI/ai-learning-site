@@ -8,7 +8,7 @@ import { hueStyle, type Hue } from "@/lib/levels";
 import { duration, ease } from "@/lib/motion";
 import { ButtonLink } from "@/components/ui/Button";
 import { ProgressMeter } from "./ProgressMeter";
-import { useLastOpened } from "./progress";
+import { useProgress } from "./progress";
 
 export type CatalogueCourse = {
   slug: string;
@@ -125,7 +125,7 @@ export function CourseCatalogue({ courses, showStatus }: { courses: CatalogueCou
 }
 
 function CourseCard({ course }: { course: CatalogueCourse }) {
-  const last = useLastOpened()[course.slug];
+  const last = useProgress().lastOpened[course.slug];
   const continueHref = last && course.ids.includes(last) ? `/learn/${last}` : undefined;
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { percentDone, useCompletedLessons } from "./progress";
+import { useProgress } from "./progress";
 
 /** A small progress bar and percentage for a set of lessons (a course or a track). Uses the current --level colour. */
 export function ProgressMeter({
@@ -13,7 +13,7 @@ export function ProgressMeter({
   onlyIfStarted?: boolean;
   className?: string;
 }) {
-  const percent = percentDone(ids, useCompletedLessons());
+  const percent = useProgress().percent(ids);
   if (ids.length === 0 || (onlyIfStarted && percent === 0)) return null;
   return (
     <div className={className}>

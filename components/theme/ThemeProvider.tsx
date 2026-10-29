@@ -2,6 +2,8 @@
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { MotionConfig, useReducedMotion } from "framer-motion";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ProgressProvider } from "@/components/learn/progress";
 import { defaultTheme, themeIds } from "@/lib/themes";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -23,7 +25,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       <MotionConfig reducedMotion="user" skipAnimations={reduceMotion}>
-        {children}
+        {/* Who is signed in, and their learning progress (browser or account). */}
+        <AuthProvider>
+          <ProgressProvider>{children}</ProgressProvider>
+        </AuthProvider>
       </MotionConfig>
     </NextThemesProvider>
   );

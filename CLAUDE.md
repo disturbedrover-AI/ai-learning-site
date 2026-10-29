@@ -16,6 +16,7 @@ developer, so explain changes in simple terms.
 - **gray-matter** for reading Markdown frontmatter
 - **@mdx-js/mdx** for lesson files (Markdown + lesson blocks), compiled on the server
 - **lucide-react** for icons
+- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) for accounts and synced progress
 
 This Next.js version differs from older ones. Read `AGENTS.md` and the docs in
 `node_modules/next/dist/docs/` before using unfamiliar Next.js APIs.
@@ -30,6 +31,9 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
   globals.css         Tailwind setup; maps theme variables to Tailwind colours.
   themes.css          ALL theme colour definitions (one block per theme).
   page.tsx            Home page.
+  login/              Sign-in page (email link, Google, LinkedIn when enabled).
+  account/            Name, avatar, sign out, delete my data.
+  auth/callback/      Where sign-in links and Google/LinkedIn return to; finishes sign-in.
   learn/              Course catalogue (page.tsx), glossary (glossary/), and
     [course]/         a course's "choose your path" page,
       [track]/        a track's level path,
@@ -37,6 +41,7 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
   news/ tools/ lab/   One folder per section.
 components/
   layout/             Header, Footer, Logo.
+  auth/               AuthProvider (who's signed in), LoginForm, AccountView, AccountMenu, Avatar.
   theme/              Theme provider and theme switcher.
   motion/             Reveal, Stagger/StaggerItem, Lift, Counter: the only animation wrappers.
   brand/              The site's visual motif (Constellation).
@@ -52,6 +57,9 @@ content/              ALL site content as files (see content/README.md for schem
   news/               Markdown, one file per post.
   tools/              JSON, one file per tool.
 lib/
+  supabase/           config.ts (env keys), client.ts (browser), server.ts (server; reads cookies).
+  auth/               providers.ts (sign-in options), roles.ts (role names, hasRole),
+                      server.ts (getUser, getRole, requireRole – server only).
   site.ts             Site name, description, navigation items.
   themes.ts           List of themes shown in the switcher.
   motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
@@ -59,6 +67,8 @@ lib/
   courses.ts          Reads and validates courses and tracks; links them to lessons.
   headings.ts         Heading ids and the lesson table of contents.
   levels.ts           levelStyle() / hueStyle(): pick a level or course colour for an element.
+supabase/migrations/  SQL to set up the database (run in the Supabase SQL editor).
+proxy.ts              Runs before each request: keeps the Supabase sign-in fresh.
 public/               Static files (images, favicon).
 ```
 
@@ -212,10 +222,60 @@ sit at a different level or position in each). Progress is kept separately per t
 `components/learn/LessonBody.tsx`. A new block = a new file there + one entry in
 that list + a row in `content/README.md`.
 
-**Progress** is stored in the visitor's browser by `components/learn/progress.ts`
-(`localStorage`): `learn-completed` (ids `course/track/lesson`, so each track keeps its
-own progress) and `learn-last-opened` (last lesson per course, for "Continue" links).
-Replace that file's internals when real accounts arrive.
+**Progress**: components only ever use `useProgress()` from `components/learn/progress.tsx`
+(completed ids, last-opened per course, `setComplete`, `markOpened`, `percent`, `clearAll`).
+Lesson ids are `course/track/lesson`, so each track keeps its own progress.
+- Signed out: kept in the browser (`localStorage` keys `learn-completed` and `learn-last-opened`).
+- Signed in: kept in the Supabase table `lesson_progress`.
+- On sign-in, browser progress is merged into the account (nothing is overwritten or
+  lost), then cleared from the browser, only after the save succeeds.
+To change where progress lives, change that one file; pages don't need to change.
+
+## Accounts (Supabase)
+
+The site works without accounts: until the keys are set, there's no "Sign in"
+button and progress stays in the browser.
+
+**Environment variables** (in `.env.local`, never committed; `.env.example` lists them):
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: from the Supabase dashboard
+  (Project Settings → API). The anon key is safe in the browser; row level security protects data.
+- `NEXT_PUBLIC_AUTH_GOOGLE`: Google sign-in is shown unless this is `false`.
+- `NEXT_PUBLIC_AUTH_LINKEDIN`: LinkedIn is hidden until this is `true`.
+- `SHOW_DRAFTS`: show draft courses.
+Restart `npm run dev` after changing `.env.local`.
+
+**One-time setup in the Supabase dashboard**
+1. *Database*: SQL Editor → New query → paste all of
+   `supabase/migrations/20261029120000_accounts.sql` → Run. It creates `profiles` and
+   `lesson_progress` with row level security, the sign-up trigger, and `delete_my_account()`.
+   It's safe to run again. Future migrations: run each new file in that folder the same way, in name order.
+2. *URLs*: Authentication → URL Configuration. Site URL: your site's address
+   (`http://localhost:3000` while developing). Redirect URLs: add
+   `http://localhost:3000/auth/callback` (and later `https://<your-domain>/auth/callback`).
+3. *Email*: works out of the box (magic link). Supabase's built-in email sender is
+   rate-limited (a few emails per hour); set up custom SMTP under Authentication → Emails for real use.
+4. *Google*: Authentication → Sign In / Providers → Google → enable, and paste a Client ID and
+   Secret from Google Cloud (APIs & Services → Credentials → OAuth client ID, type "Web").
+   In Google Cloud, the authorised redirect URI is the callback URL Supabase shows on that screen
+   (`https://<project>.supabase.co/auth/v1/callback`).
+5. *LinkedIn (later)*: enable "LinkedIn (OIDC)" in the same place with keys from a LinkedIn app,
+   then set `NEXT_PUBLIC_AUTH_LINKEDIN=true`.
+
+**Data rules** (enforced by the database, not just the site): each user can read and change only
+their own profile and progress. Users can change their profile's name and avatar, never its role.
+
+**Roles**: `user` (everyone, the default) < `member` < `owner`, stored in `profiles.role`.
+- Client: `useAuth().profile?.role`, and `hasRole(role, "member")` from `lib/auth/roles.ts`.
+- Server: `getRole()` and `requireRole("member", "/lab")` from `lib/auth/server.ts`. Signed out →
+  sent to /login (and back afterwards); signed in without the role → /account explains.
+  These read cookies, so use them inside `<Suspense>` (Cache Components).
+- Roles change only through the SQL editor (or the service role). To make someone the owner:
+  ```sql
+  update public.profiles
+  set role = 'owner'
+  where id = (select id from auth.users where email = 'you@example.com');
+  ```
+  Use `'member'` or `'user'` the same way. They see it after their next page load.
 
 ## Standing rules
 
@@ -233,7 +293,7 @@ Replace that file's internals when real accounts arrive.
 
 ## Notes
 
-- The Lab page is a placeholder; login and permissions will be added later.
+- The Lab page is a placeholder; it isn't gated yet (next step: `requireRole("member")`).
 - News items are listed but don't yet have their own detail pages.
 
 @AGENTS.md

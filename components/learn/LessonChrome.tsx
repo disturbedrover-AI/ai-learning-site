@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import type { Heading } from "@/lib/headings";
 import { hoverLift, popover } from "@/lib/motion";
-import { markLessonOpened, setLessonComplete, useCompletedLessons } from "./progress";
+import { useProgress } from "./progress";
 
 /** A thin bar under the header that fills as you read down the page. */
 export function ReadingProgress() {
@@ -67,11 +67,12 @@ export function TableOfContents({ headings }: { headings: Heading[] }) {
 
 /** Toggles this lesson's "done" state for the visitor. */
 export function CompleteButton({ id }: { id: string }) {
-  const done = useCompletedLessons().includes(id);
+  const { isComplete, setComplete } = useProgress();
+  const done = isComplete(id);
   return (
     <motion.button
       type="button"
-      onClick={() => setLessonComplete(id, !done)}
+      onClick={() => setComplete(id, !done)}
       aria-pressed={done}
       {...hoverLift}
       className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-colors ${
@@ -191,6 +192,8 @@ function NeighbourLink({ lesson, direction }: { lesson: NonNullable<Neighbour>; 
 
 /** Remembers this lesson as the last one opened in its course (for "Continue" links). Renders nothing. */
 export function RememberLesson({ id }: { id: string }) {
-  useEffect(() => markLessonOpened(id), [id]);
+  const { markOpened, synced } = useProgress();
+  // Runs again after sign-in (synced changes) so the account learns about this lesson too.
+  useEffect(() => markOpened(id), [id, synced]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

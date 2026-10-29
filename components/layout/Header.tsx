@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { popover, slide } from "@/lib/motion";
 import { navItems } from "@/lib/site";
+import { AccountMenu } from "@/components/auth/AccountMenu";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { Logo } from "./Logo";
 
@@ -54,6 +55,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
+          <AccountMenu />
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}

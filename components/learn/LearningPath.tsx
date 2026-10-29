@@ -10,7 +10,7 @@ import { Lift } from "@/components/motion/Lift";
 import { Reveal } from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { ButtonLink } from "@/components/ui/Button";
-import { useCompletedLessons } from "./progress";
+import { useProgress } from "./progress";
 
 export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" | "tags"> & {
   /** Progress id, "course/track/lesson". */
@@ -23,10 +23,9 @@ export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" 
 export type PathLevel = Level & { lessons: PathLesson[] };
 
 /** Completion state shared by the path and its side panel. */
-function useProgress(levels: PathLevel[]) {
-  const completed = useCompletedLessons();
+function usePathProgress(levels: PathLevel[]) {
+  const { isComplete: isDone } = useProgress();
   const all = levels.flatMap((l) => l.lessons);
-  const isDone = (id: string) => completed.includes(id);
   return {
     all,
     isDone,
@@ -37,7 +36,7 @@ function useProgress(levels: PathLevel[]) {
 
 /** The learning path: levels in order, each with lesson steps joined by a line that fills as lessons are completed. */
 export function LearningPath({ levels }: { levels: PathLevel[] }) {
-  const { all, isDone, nextUp } = useProgress(levels);
+  const { all, isDone, nextUp } = usePathProgress(levels);
   const stepOf = (slug: string) => all.findIndex((l) => l.slug === slug) + 1;
 
   return (
@@ -150,7 +149,7 @@ export function LearningPath({ levels }: { levels: PathLevel[] }) {
 
 /** The Learn page's side panel: progress, "continue where you left off", quick links. */
 export function LearnPanel({ levels }: { levels: PathLevel[] }) {
-  const { all, isDone, doneCount, nextUp } = useProgress(levels);
+  const { all, isDone, doneCount, nextUp } = usePathProgress(levels);
   const percent = all.length ? Math.round((doneCount / all.length) * 100) : 0;
 
   return (
