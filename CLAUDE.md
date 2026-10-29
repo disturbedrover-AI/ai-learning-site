@@ -333,7 +333,8 @@ button and progress stays in the browser.
 - `NEXT_PUBLIC_AUTH_GOOGLE`: Google sign-in is shown unless this is `false`.
 - `NEXT_PUBLIC_AUTH_LINKEDIN`: LinkedIn is hidden until this is `true`.
 - `SHOW_DRAFTS`: show draft courses.
-- `NEXT_PUBLIC_SITE_URL`: the site's public address (used in the RSS feed).
+- `NEXT_PUBLIC_SITE_URL`: the site's public address (used in the RSS feed). Optional on
+  Vercel: without it, Vercel's own production address is used (`lib/site.ts`).
 Restart `npm run dev` after changing `.env.local`.
 
 **One-time setup in the Supabase dashboard**
