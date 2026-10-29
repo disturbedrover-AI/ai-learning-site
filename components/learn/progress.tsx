@@ -17,6 +17,7 @@ import { createContext, useCallback, useContext, useEffect, useState, useSyncExt
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useHydrated } from "@/lib/useHydrated";
 
 type State = {
   /** Ids of completed lessons. */
@@ -276,6 +277,17 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 /** The visitor's learning progress. The only way pages read or change progress. */
 export function useProgress(): Progress {
   const progress = useContext(ProgressContext);
+  const hydrated = useHydrated();
   if (!progress) throw new Error("useProgress must be used inside <ProgressProvider>.");
-  return progress;
+  // Until this component has hydrated, report what the server rendered: no progress yet.
+  return hydrated ? progress : { ...progress, ...serverProgress };
 }
+
+// What the server renders (it can't see the browser's or account's progress).
+const serverProgress: Pick<Progress, "completed" | "lastOpened" | "isComplete" | "percent" | "synced"> = {
+  completed: noIds,
+  lastOpened: noLast,
+  isComplete: () => false,
+  percent: () => 0,
+  synced: false,
+};

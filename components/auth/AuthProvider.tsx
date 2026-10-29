@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isRole, type Role } from "@/lib/auth/roles";
+import { useHydrated } from "@/lib/useHydrated";
 
 export type Profile = { display_name: string | null; avatar_url: string | null; role: Role };
 
@@ -95,8 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): Auth {
   const auth = useContext(AuthContext);
+  const hydrated = useHydrated();
   if (!auth) throw new Error("useAuth must be used inside <AuthProvider>.");
-  return auth;
+  // Until this component has hydrated, report what the server rendered: "still checking".
+  return hydrated ? auth : { ...auth, loading: auth.configured, user: null, profile: null };
 }
 
 /** The name to show for a user: their profile name, provider name, or email. */
