@@ -149,7 +149,7 @@ export default function Tokenization() {
       <div
         aria-live="polite"
         aria-label={`${tokens.length} tokens`}
-        className="mt-5 flex min-h-28 flex-wrap content-start gap-1.5 rounded-2xl border border-border bg-background p-4"
+        className="mt-5 flex min-h-15 flex-wrap content-start gap-1.5 rounded-2xl border border-border bg-background p-4"
       >
         <AnimatePresence mode="popLayout">
           {tokens.map((token, i) => (

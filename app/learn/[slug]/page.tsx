@@ -49,9 +49,9 @@ async function Lesson({ params }: Pick<PageProps<"/learn/[slug]">, "params">) {
     <div style={levelStyle(lesson.level)}>
       <ReadingProgress />
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
-        {/* Single column on small screens; three columns (contents · lesson · panel) on wide ones. */}
-        <div className="xl:grid xl:grid-cols-[13rem_minmax(0,68ch)_16rem] xl:justify-between xl:gap-10">
-          <Stagger className="mx-auto max-w-[68ch] pt-10 pb-12 sm:pt-14 xl:col-start-2 xl:mx-0">
+        {/* Single column on small screens; three columns (contents · lesson · panel) from 1024px. */}
+        <div className="lg:grid lg:grid-cols-[11rem_minmax(0,68ch)_14rem] lg:justify-between lg:gap-8 xl:grid-cols-[13rem_minmax(0,68ch)_16rem] xl:gap-10">
+          <Stagger className="mx-auto max-w-[68ch] pt-10 pb-12 sm:pt-14 lg:col-start-2 lg:mx-0">
             <StaggerItem>
               <Link
                 href="/learn"
@@ -101,15 +101,15 @@ async function Lesson({ params }: Pick<PageProps<"/learn/[slug]">, "params">) {
             </StaggerItem>
           </Stagger>
 
-          <aside className="hidden xl:col-start-1 xl:row-start-2 xl:block">
+          <aside className="hidden lg:col-start-1 lg:row-start-2 lg:block">
             <div className="sticky top-28">
               <TableOfContents headings={headings} />
             </div>
           </aside>
 
-          <div className="mx-auto min-w-0 max-w-[68ch] xl:col-start-2 xl:row-start-2 xl:mx-0">
+          <div className="mx-auto min-w-0 max-w-[68ch] lg:col-start-2 lg:row-start-2 lg:mx-0">
             {headings.length > 0 && (
-              <details className="mb-10 rounded-2xl border border-border bg-surface px-5 py-4 xl:hidden">
+              <details className="mb-10 rounded-2xl border border-border bg-surface px-5 py-4 lg:hidden">
                 <summary className="cursor-pointer text-sm font-semibold text-foreground">On this page</summary>
                 <ul className="mt-3 space-y-1">
                   {headings.map((h) => (
@@ -130,12 +130,12 @@ async function Lesson({ params }: Pick<PageProps<"/learn/[slug]">, "params">) {
             </Reveal>
 
             {/* On small screens the panel follows the lesson. */}
-            <Reveal className="mt-16 xl:hidden">
+            <Reveal className="mt-16 lg:hidden">
               <LessonPanel slug={lesson.slug} prev={neighbour(index - 1)} next={neighbour(index + 1)} />
             </Reveal>
           </div>
 
-          <aside className="hidden xl:col-start-3 xl:row-start-2 xl:block">
+          <aside className="hidden lg:col-start-3 lg:row-start-2 lg:block">
             <div className="sticky top-28">
               <LessonPanel slug={lesson.slug} prev={neighbour(index - 1)} next={neighbour(index + 1)} />
             </div>
