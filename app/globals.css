@@ -38,3 +38,29 @@ h3 {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+html {
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Theme change cross-fade (started by crossFade() in lib/motion.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease;
+}
+
+/* "Reduce motion": CSS transitions finish instantly too (Framer Motion is handled in ThemeProvider). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0s !important;
+  }
+}

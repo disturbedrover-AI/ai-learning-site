@@ -1,0 +1,11 @@
+{
+  "term": "Artificial Intelligence",
+  "definition": "Software that does tasks we normally think need human intelligence, such as understanding language, recognising images or making predictions. Today almost all AI works by learning patterns from examples rather than following hand-written rules.",
+  "aliases": [
+    "AI"
+  ],
+  "related": [
+    "machine-learning",
+    "neural-network"
+  ]
+}

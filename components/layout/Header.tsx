@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { popover, slide } from "@/lib/motion";
 import { navItems } from "@/lib/site";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { Logo } from "./Logo";
@@ -31,8 +32,10 @@ export function Header() {
                     <motion.span
                       layoutId="nav-active"
                       className="absolute inset-0 rounded-full bg-surface"
-                      transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                    />
+                      transition={slide}
+                    >
+                      <span className="absolute inset-x-4 -bottom-px h-0.5 rounded-full bg-accent" />
+                    </motion.span>
                   )}
                   <Link
                     href={item.href}
@@ -74,7 +77,7 @@ export function Header() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            transition={popover}
             className="overflow-hidden border-t border-border md:hidden"
           >
             <ul className="flex flex-col gap-1 px-4 py-3">

@@ -1,0 +1,22 @@
+[
+  {
+    "level": 0,
+    "title": "Foundations",
+    "description": "What AI is, how it works under the hood, and how to get set up. No experience needed."
+  },
+  {
+    "level": 1,
+    "title": "Core Concepts",
+    "description": "The key ideas behind modern AI: training, prompts, context and how models are measured."
+  },
+  {
+    "level": 2,
+    "title": "Hands-on",
+    "description": "Use AI tools for real tasks, run models on your own computer and compare the results."
+  },
+  {
+    "level": 3,
+    "title": "Build Things",
+    "description": "Put it together: small projects that use AI to solve problems you care about."
+  }
+]

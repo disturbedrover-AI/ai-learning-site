@@ -14,6 +14,7 @@ developer, so explain changes in simple terms.
 - **Framer Motion** for animation
 - **next-themes** for theme switching and persistence (stored in `localStorage` under `theme`)
 - **gray-matter** for reading Markdown frontmatter
+- **@mdx-js/mdx** for lesson files (Markdown + lesson blocks), compiled on the server
 
 This Next.js version differs from older ones. Read `AGENTS.md` and the docs in
 `node_modules/next/dist/docs/` before using unfamiliar Next.js APIs.
@@ -28,21 +29,28 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
   globals.css         Tailwind setup; maps theme variables to Tailwind colours.
   themes.css          ALL theme colour definitions (one block per theme).
   page.tsx            Home page.
-  learn/ news/ tools/ lab/   One folder per section.
+  learn/              Learning path (page.tsx), lesson pages ([slug]/), glossary (glossary/).
+  news/ tools/ lab/   One folder per section.
 components/
   layout/             Header, Footer, Logo.
   theme/              Theme provider and theme switcher.
-  motion/             Reusable animation wrappers (FadeIn).
-  ui/                 Small shared building blocks (Card, Tag, PageHeader).
+  motion/             Reveal, Stagger/StaggerItem, Lift: the only animation wrappers.
+  ui/                 Small shared building blocks (Card, Tag, PageHeader, Button).
+  learn/              Learning path, lesson page parts, glossary browser, progress tracking.
+    blocks/           Lesson blocks: Definition, Term, Example, TryIt, KeyPoint, Quiz, Explainer.
+    lesson.css        Reading styles for lesson text.
+  explainers/         Interactive animated explainers + registry.ts (name → component).
 content/              ALL site content as files (see content/README.md for schemas).
-  lessons/            Markdown, one file per lesson.
+  lessons/            MDX, one file per lesson, plus _levels.json (the path's levels).
   glossary/           JSON, one file per term.
   news/               Markdown, one file per post.
   tools/              JSON, one file per tool.
 lib/
   site.ts             Site name, description, navigation items.
   themes.ts           List of themes shown in the switcher.
+  motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
   content.ts          Reads and validates the files in content/.
+  headings.ts         Heading ids and the lesson table of contents.
 public/               Static files (images, favicon).
 ```
 
@@ -69,6 +77,54 @@ public/               Static files (images, favicon).
 - If a new variable is needed, add it to **every** theme block and to `@theme` in `globals.css`.
 - Check new UI in all themes (Light, Dark, Warm Sand, Mist) before finishing.
 
+## Motion rules
+
+- Every animation uses the presets in `lib/motion.ts`. Don't invent new timings,
+  easings or springs in components; add a preset there if one is truly missing.
+- Use the wrappers in `components/motion/`:
+  - `<Reveal>`: fade up the first time a block scrolls into view (`still` = fade only).
+  - `<Stagger>` + `<StaggerItem>`: lists and grids whose items appear one after another.
+  - `<Lift>`: gentle hover lift for linked cards. Buttons: `Button` / `ButtonLink` in `components/ui/Button.tsx`.
+- Reveals happen once, never on every scroll. Durations stay between 0.2s and 0.5s.
+- No parallax, no 3D, no page-wide transitions. The only whole-page effect is
+  the theme cross-fade (`crossFade` in `lib/motion.ts`, used by the theme switcher).
+- "Reduce motion" is handled globally (`skipAnimations` in `ThemeProvider.tsx`,
+  plus a CSS rule in `globals.css`), so new components get it for free.
+  CSS animations still need `motion-reduce:[animation:none]`.
+
+## Learn section
+
+Content schemas (lesson frontmatter, levels, blocks, glossary) are documented in
+`content/README.md`. Keep it in sync with `lib/content.ts`.
+
+**Add a lesson**
+1. Create `content/lessons/<slug>.mdx` with the frontmatter from `content/README.md`
+   (`title`, `slug`, `level`, `order`, `duration`, `summary`, `tags`, `prerequisites`).
+2. Write the text in Markdown with `##` section headings; use blocks
+   (`Definition`, `Term`, `Example`, `TryIt`, `KeyPoint`, `Quiz`, `Explainer`) where they help.
+3. It appears on the learning path automatically, in its level, sorted by `order`.
+   Prerequisites and levels are checked: a typo shows an error naming the file.
+
+**Add a glossary term**
+1. Create `content/glossary/<term-name>.json` with `term`, `definition`, and optional
+   `aliases` and `related`.
+2. `<Definition term="…">` and `<Term>` in lessons link to it automatically
+   (matched by file name, term or alias).
+
+**Add an explainer**
+1. Create `components/explainers/<Name>.tsx`: starts with `"use client"`, default export,
+   uses theme classes and `lib/motion.ts` presets.
+2. Add one line to `components/explainers/registry.ts`: `name: () => import("./<Name>"),`.
+3. Use it in any lesson: `<Explainer name="name" />`.
+
+**Lesson blocks** live in `components/learn/blocks/` and are registered in
+`components/learn/LessonBody.tsx`. A new block = a new file there + one entry in
+that list + a row in `content/README.md`.
+
+**Progress** ("Mark as complete") is stored in the visitor's browser
+(`localStorage`, key `completed-lessons`) via `components/learn/progress.ts`.
+Replace that file's internals when real accounts arrive.
+
 ## Standing rules
 
 1. **Content is file-based.** New lessons, glossary terms, news, and tools are
@@ -86,6 +142,6 @@ public/               Static files (images, favicon).
 ## Notes
 
 - The Lab page is a placeholder; login and permissions will be added later.
-- Lessons and news are listed but don't yet have their own detail pages.
+- News items are listed but don't yet have their own detail pages.
 
 @AGENTS.md

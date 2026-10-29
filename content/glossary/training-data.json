@@ -1,0 +1,11 @@
+{
+  "term": "Training Data",
+  "definition": "The examples a model learns from. For a spam filter, it's labelled emails; for a language model, it's a huge collection of text from books, websites and code. A model can only be as good, and as fair, as the data it was trained on.",
+  "aliases": [
+    "Dataset"
+  ],
+  "related": [
+    "machine-learning",
+    "parameters"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "term": "Neural Network",
+  "definition": "A kind of machine learning model made of many simple connected units arranged in layers. Each connection has a strength (a parameter) that gets adjusted during training. Loosely inspired by the brain, but really just a lot of arithmetic.",
+  "aliases": [
+    "Neural net"
+  ],
+  "related": [
+    "parameters",
+    "machine-learning",
+    "large-language-model"
+  ]
+}

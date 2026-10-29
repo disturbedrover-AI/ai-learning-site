@@ -1,0 +1,13 @@
+{
+  "term": "Large Language Model",
+  "definition": "A neural network trained on enormous amounts of text to predict the next token. That one skill, done at huge scale, lets it answer questions, write, summarise and translate. ChatGPT, Claude, Llama and Mistral are all built on large language models.",
+  "aliases": [
+    "LLM",
+    "Language model"
+  ],
+  "related": [
+    "token",
+    "parameters",
+    "inference"
+  ]
+}

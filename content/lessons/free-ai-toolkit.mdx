@@ -1,0 +1,136 @@
+---
+title: Your free AI toolkit
+slug: free-ai-toolkit
+level: 0
+order: 3
+duration: 14
+summary: You don't need a powerful computer or a paid subscription to run AI. Here are the free, open-source tools to install, and how to run a real language model on an ordinary laptop.
+tags: [tools, hands-on, open source]
+prerequisites: [how-language-models-work]
+---
+
+## Why run AI on your own computer?
+
+Most people use AI through websites like ChatGPT or Claude. Those are excellent, but running a model yourself teaches you things a website can't:
+
+- **It's private.** Your words never leave your computer.
+- **It works offline.** Once downloaded, a model runs with the Wi-Fi switched off.
+- **It's free.** No subscription, no usage limits.
+- **You see how it really works.** Different models, different sizes, different behaviour, all side by side.
+
+The models you can run at home are smaller and less capable than the biggest online ones. But they're genuinely useful, and a few years ago they would have been considered state of the art.
+
+## Open models, explained
+
+A trained model is, in the end, a file full of numbers: its <Term>parameters</Term>. Some companies keep that file private and only let you use the model through their website. Others publish it so anyone can download and run it. These are called **open models** (or open-weight models).
+
+Well-known open model families include **Llama** (Meta), **Gemma** (Google), **Qwen** (Alibaba), **Mistral** and **Phi** (Microsoft). Each comes in several sizes.
+
+<Definition term="Parameters">
+  The numbers inside a model that were tuned during training. Model sizes are given in billions of parameters: a "3B" model has about 3 billion. More parameters usually means a more capable model, but also a bigger file and a slower one.
+</Definition>
+
+## Will my laptop cope?
+
+Probably, yes. You do **not** need a gaming PC or a special graphics card (GPU). Small models run happily on an ordinary processor (CPU); a GPU just makes them faster.
+
+A rough guide:
+
+- **8 GB of memory (RAM):** small models of 1 to 4 billion parameters. Good for chatting, rewriting and summarising.
+- **16 GB of memory:** comfortable with models up to about 8 billion parameters. Noticeably smarter.
+- **Disk space:** 2 to 5 GB free for each model you download.
+- **Any recent Mac, Windows or Linux computer** will do. Apple Silicon Macs (M1 and later) are especially quick.
+
+How can a 3-billion-parameter model fit on a laptop? Through a trick called **quantization**.
+
+<Example title="Shrinking a model to fit">
+  Normally each parameter is stored with 16 bits of precision, which takes 2 bytes.
+
+  - 3 billion parameters × 2 bytes = **6 GB**. Too heavy for many laptops.
+
+  Quantization rounds each parameter to fewer bits, typically 4 instead of 16, a bit like saving a photo as a smaller JPEG.
+
+  - 3 billion parameters × 0.5 bytes = **1.5 GB**, plus a little extra, so about **2 GB**.
+
+  The model loses a tiny amount of quality but becomes four times smaller and much faster. The models you download for home use are almost always quantized already.
+</Example>
+
+## The toolkit
+
+You only need the first tool to get started. The others are worth knowing about as you go further. All of them are free and open source.
+
+- **Ollama**: the easiest way to download and run open models. Works on Mac, Windows and Linux. You give it a model's name; it fetches it and starts a chat.
+- **Jan**: a desktop app with a familiar chat window, if you'd rather not type commands. It runs models fully offline.
+- **Open WebUI**: a ChatGPT-style web interface that sits on top of Ollama, with chat history and document upload.
+- **llama.cpp**: the engine that powers many of these tools. For the curious: it's what makes models run efficiently on ordinary CPUs.
+- **Hugging Face** (huggingface.co): the main library of open models and datasets, plus free browser demos to try models without installing anything.
+
+<KeyPoint>
+  You can run a real language model on an ordinary laptop, for free, privately, and offline. Ollama plus a small open model is all it takes.
+</KeyPoint>
+
+## Running your first model
+
+Everything you do here is <Term>inference</Term>: using a model that someone else has already trained. Training needs huge data centres; inference with a small model needs only your laptop.
+
+<TryIt title="Chat with a model on your own laptop">
+  Allow about 15 minutes, most of it waiting for the download.
+
+  1. Go to **ollama.com**, click **Download**, and install it like any other app.
+  2. Open a terminal. On a Mac, press Cmd + Space, type **Terminal** and press Enter. On Windows, open the Start menu and type **PowerShell**.
+  3. Type `ollama run llama3.2` and press Enter. The first time, it downloads the model (about 2 GB).
+  4. When you see `>>>`, type a message, such as *Explain what a token is, in one sentence.* Watch the answer appear token by token, just like in the last lesson.
+  5. Now switch off your Wi-Fi and ask another question. It still works: the model lives on your computer.
+  6. Type `/bye` to finish.
+
+  On an older laptop with 8 GB of memory or less, use the even smaller `ollama run gemma3:1b` instead.
+</TryIt>
+
+## Getting good results from a small model
+
+Small local models are capable but less forgiving than the big online ones. A few habits help:
+
+- **Be specific.** "Summarise this email in three bullet points" beats "Summarise this".
+- **Give it the text to work with.** Paste the article or notes into your message rather than relying on what it remembers.
+- **Keep tasks focused.** Rewriting, summarising, brainstorming and explaining work well. Up-to-date facts and long calculations don't.
+- **Double-check facts.** Smaller models make things up more often, for the reasons you saw in the last lesson.
+- **Try another model.** If one gives poor answers, try `ollama run qwen3:4b` or `ollama run phi4-mini`, then compare. You can list what you've downloaded with `ollama list`, and remove one with `ollama rm` followed by its name.
+
+<Quiz
+  questions={[
+    {
+      question: "What do you need to run a small language model at home?",
+      options: [
+        "A powerful graphics card (GPU)",
+        "A paid subscription",
+        "An ordinary laptop with about 8 GB of memory",
+      ],
+      answer: 3,
+      explanation: "Small quantized models run on a normal CPU. A GPU only makes them faster.",
+    },
+    {
+      question: "What does quantization do?",
+      options: [
+        "Stores each parameter with fewer bits, so the model is smaller and faster",
+        "Adds more parameters to make the model smarter",
+        "Connects the model to the internet",
+      ],
+      answer: 1,
+      explanation: "Rounding parameters from 16 bits to around 4 makes a model about four times smaller, with only a small loss in quality.",
+    },
+    {
+      question: "You've downloaded a model with Ollama and switch off your Wi-Fi. What happens?",
+      options: [
+        "It stops working",
+        "It keeps working, because the model runs on your computer",
+        "It switches to a smaller online model",
+      ],
+      answer: 2,
+      explanation: "That's the point of local AI: private and offline once downloaded.",
+    },
+  ]}
+/>
+
+## What's next
+
+That completes the Foundations level. You know what AI is, how a language model produces text, and you have a working model on your own machine. The next level builds on this with the core ideas you'll use every day: how prompts work, what a context window is, and how to judge whether a model is any good.

@@ -1,10 +1,13 @@
 "use client";
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { MotionConfig } from "framer-motion";
+import { MotionConfig, useReducedMotion } from "framer-motion";
 import { defaultTheme, themeIds } from "@/lib/themes";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Visitors with "reduce motion" turned on get every animation finished instantly.
+  const reduceMotion = useReducedMotion() ?? false;
+
   return (
     <NextThemesProvider
       attribute="data-theme"
@@ -19,8 +22,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         suppressHydrationWarning: true,
       }}
     >
-      {/* Respect the visitor's "reduce motion" system setting. */}
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <MotionConfig reducedMotion="user" skipAnimations={reduceMotion}>
+        {children}
+      </MotionConfig>
     </NextThemesProvider>
   );
 }

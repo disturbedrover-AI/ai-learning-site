@@ -1,0 +1,11 @@
+{
+  "term": "Inference",
+  "definition": "Using a trained model to get an answer, as opposed to training it. Every time you send a message to a chatbot, the model runs inference. Training needs huge data centres; inference with a small model can run on an ordinary laptop.",
+  "aliases": [
+    "Running a model"
+  ],
+  "related": [
+    "parameters",
+    "large-language-model"
+  ]
+}

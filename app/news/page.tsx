@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FadeIn } from "@/components/motion/FadeIn";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { Card, Tag } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getNews } from "@/lib/content";
@@ -22,9 +22,9 @@ export default function NewsPage() {
         description="Short, clear updates on what's happening and why it matters."
       />
 
-      <div className="flex flex-col gap-4">
-        {news.map((item, i) => (
-          <FadeIn key={item.slug} onScroll delay={i * 0.06}>
+      <Stagger className="flex flex-col gap-4">
+        {news.map((item) => (
+          <StaggerItem key={item.slug}>
             <Card>
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                 <time dateTime={item.date}>{formatDate(item.date)}</time>
@@ -48,10 +48,10 @@ export default function NewsPage() {
                 </div>
               )}
             </Card>
-          </FadeIn>
+          </StaggerItem>
         ))}
         {news.length === 0 && <p className="text-muted">No news yet.</p>}
-      </div>
+      </Stagger>
     </div>
   );
 }

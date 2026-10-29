@@ -1,0 +1,124 @@
+---
+title: What is AI, really?
+slug: what-is-ai
+level: 0
+order: 1
+duration: 9
+summary: Strip away the hype and AI is something surprisingly simple. Software that learns patterns from examples. Here's what that means, and what it doesn't.
+tags: [basics, introduction]
+prerequisites: []
+---
+
+## A simple starting point
+
+You've probably heard AI described as a robot brain, a digital genius, or a threat to humanity. The reality is calmer and more interesting.
+
+<Definition term="Artificial Intelligence">
+  Software that does tasks we'd normally say need human intelligence, like understanding a sentence, recognising a face in a photo, or predicting what you'll want to watch next.
+</Definition>
+
+Notice what that definition *doesn't* say. It doesn't say the software thinks, feels, or understands the way you do. It says the software can **do certain tasks**. That difference matters, and we'll come back to it.
+
+## Rules versus examples
+
+For most of computing history, programs were lists of instructions written by people. If you wanted a program to sort your email, you'd write rules: *if the subject contains "WIN A PRIZE", move it to spam.*
+
+That works until spammers write "W1N A PR1ZE". Then you need another rule. And another. Rules break whenever the world is messier than the programmer imagined, and the world is always messier.
+
+Modern AI takes a different route, called <Term>machine learning</Term>. Instead of writing the rules, you show the computer lots of examples and let it work out the patterns itself.
+
+<Example title="Teaching a spam filter">
+  Give a program 100,000 emails, each labelled **spam** or **not spam**. It notices that spam often has certain words, odd links, lots of capital letters and unknown senders. Nobody tells it these clues; it discovers them, and weighs how much each one matters.
+
+  Now show it an email it has never seen. It checks for the same clues and makes a prediction: *probably spam, 94% likely.* When it gets one wrong and you click "not spam", that's one more example to learn from.
+</Example>
+
+Those labelled emails are the <Term>training data</Term>. The program's job during training is to adjust itself until its guesses on those examples are as good as possible.
+
+<KeyPoint>
+  Today's AI doesn't follow rules someone wrote. It learns patterns from examples, and then applies those patterns to new things it hasn't seen before.
+</KeyPoint>
+
+## What's inside the box?
+
+Most modern AI is built from <Term>neural network</Term>s: huge webs of simple maths operations, arranged in layers. Each connection in the web has a strength, a number that can be turned up or down. These numbers are called <Term>parameters</Term>.
+
+Training is the process of nudging those numbers, millions or billions of times, so that the network's outputs get closer to the right answers. There's no magic in any single step. It's just arithmetic, done at enormous scale.
+
+That's the honest picture: an AI model is a very large set of numbers that have been tuned until they turn inputs (an email, a photo, a sentence) into useful outputs (spam or not, cat or dog, the next word).
+
+## Where you already meet it
+
+You probably used AI several times today without noticing:
+
+- **Your phone's keyboard** suggesting the next word
+- **Photo apps** grouping pictures by the people in them
+- **Maps** predicting traffic and your arrival time
+- **Streaming and shopping sites** recommending what to watch or buy
+- **Live captions** on videos and calls
+- **Chat assistants** like ChatGPT, Claude or Gemini
+
+Each of these learned from examples: millions of typed messages, labelled photos, past journeys, or what other people watched next.
+
+## What AI is not
+
+Because AI can sound so fluent, it's easy to assume there's understanding behind it. Keep these in mind:
+
+- **It doesn't know when it's wrong.** A model will give a confident answer whether or not it's correct.
+- **It reflects its data.** If the examples were biased or out of date, the model will be too.
+- **It's narrow.** A model that's brilliant at one task can be useless at a slightly different one.
+- **It isn't alive.** It has no goals, feelings or experiences of its own. It turns inputs into outputs.
+
+None of this makes AI less useful. It just means the best way to use it is the way you'd use a very fast, very well-read assistant who sometimes makes things up: helpful, but worth checking.
+
+<TryIt title="Train your own AI in five minutes">
+  You can train a real machine learning model in your browser, with your webcam, for free. Nothing is uploaded unless you choose to.
+
+  1. Open **teachablemachine.withgoogle.com** and choose **Get Started**, then **Image Project**, then **Standard image model**.
+  2. Rename "Class 1" to **Thumbs up** and "Class 2" to **Thumbs down**.
+  3. Click **Webcam** under each class and hold the button to record about 50 pictures of each gesture.
+  4. Click **Train Model** and wait about a minute.
+  5. Show your thumb to the camera in the **Preview** panel and watch the prediction change.
+  6. Now try to fool it: use your other hand, change the lighting, or step back. Where does it fail, and why do you think that is?
+</TryIt>
+
+If step 6 confused it, you've just discovered the most important lesson in AI: a model only knows what was in its examples.
+
+<Quiz
+  questions={[
+    {
+      question: "What's the main difference between traditional programs and machine learning?",
+      options: [
+        "Machine learning programs are written in a newer language",
+        "Machine learning learns patterns from examples instead of following hand-written rules",
+        "Machine learning only works on the internet",
+      ],
+      answer: 2,
+      explanation: "Traditional programs follow rules people write. Machine learning works the rules out from examples.",
+    },
+    {
+      question: "What are a model's parameters?",
+      options: [
+        "The settings you choose in the app",
+        "The questions you ask it",
+        "The numbers inside it that get adjusted during training",
+      ],
+      answer: 3,
+      explanation: "Parameters are the tuned numbers that hold everything the model has learned.",
+    },
+    {
+      question: "An AI gives you a confident, detailed answer. What should you assume?",
+      options: [
+        "It's correct, because it sounds sure",
+        "It might be wrong; AI sounds equally confident either way",
+        "It looked the answer up in a database",
+      ],
+      answer: 2,
+      explanation: "Models don't know when they're wrong, so confidence tells you nothing. Check what matters.",
+    },
+  ]}
+/>
+
+## What's next
+
+You now know what AI is: pattern-learning software built from tuned numbers. Next, we'll open up the most talked-about kind, the language model behind chat assistants, and see how it turns your words into an answer.

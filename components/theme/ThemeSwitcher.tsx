@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { crossFade, popover } from "@/lib/motion";
 import { defaultTheme, themes } from "@/lib/themes";
 
 const options = [{ id: "system", label: "System" }, ...themes];
@@ -92,7 +94,7 @@ export function ThemeSwitcher() {
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
+            transition={popover}
             className="absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-2xl border border-border bg-surface p-1.5 shadow-lg shadow-black/5"
           >
             {options.map((option) => {
@@ -104,8 +106,9 @@ export function ThemeSwitcher() {
                     role="option"
                     aria-selected={selected}
                     onClick={() => {
-                      setTheme(option.id);
                       setOpen(false);
+                      // flushSync applies the new theme inside the cross-fade.
+                      crossFade(() => flushSync(() => setTheme(option.id)));
                     }}
                     className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-background"
                   >

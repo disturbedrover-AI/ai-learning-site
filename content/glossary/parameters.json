@@ -1,0 +1,13 @@
+{
+  "term": "Parameters",
+  "definition": "The adjustable numbers inside a model that are set during training; together they hold everything the model has learned. Model sizes are described by their parameter count: a \"7B\" model has about 7 billion of them.",
+  "aliases": [
+    "Weights",
+    "Model weights"
+  ],
+  "related": [
+    "neural-network",
+    "training-data",
+    "inference"
+  ]
+}

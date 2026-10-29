@@ -1,6 +1,12 @@
 {
   "term": "Machine Learning",
-  "definition": "A way of building AI where the computer learns patterns from examples (data) instead of being given step-by-step rules by a programmer.",
-  "aliases": ["ML"],
-  "related": []
+  "definition": "A way of building AI where the computer learns patterns from examples (data) instead of being given step-by-step rules by a programmer. Show it thousands of spam and non-spam emails, and it learns to tell them apart.",
+  "aliases": [
+    "ML"
+  ],
+  "related": [
+    "training-data",
+    "neural-network",
+    "artificial-intelligence"
+  ]
 }

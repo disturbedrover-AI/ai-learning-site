@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { FadeIn } from "@/components/motion/FadeIn";
+import { Lift } from "@/components/motion/Lift";
+import { Reveal } from "@/components/motion/Reveal";
+import { Stagger, StaggerItem } from "@/components/motion/Stagger";
+import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const sections = [
@@ -24,71 +27,65 @@ export default function HomePage() {
   return (
     <>
       {/* Full-screen background that stays put while scrolling, set per theme by --page-gradient. */}
-      <FadeIn y={0} className="pointer-events-none fixed inset-0 -z-10">
+      <Reveal still className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute inset-0 [background:var(--page-gradient)] [animation:var(--page-animation)] motion-reduce:[animation:none]" />
-      </FadeIn>
+      </Reveal>
 
       <section className="relative overflow-hidden">
         {/* Background glow, set per theme by --hero-gradient in themes.css. */}
-        <FadeIn y={0} className="pointer-events-none absolute inset-0 -z-10">
+        <Reveal still className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-0 [background:var(--hero-gradient)] [opacity:var(--hero-opacity)] [mask-image:linear-gradient(to_bottom,black_60%,transparent)] [animation:var(--hero-animation)] motion-reduce:[animation:none]" />
-        </FadeIn>
+        </Reveal>
 
-        <div className="mx-auto max-w-6xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
-          <FadeIn>
+        <Stagger gap={0.08} className="mx-auto max-w-6xl px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
+          <StaggerItem>
             <p className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted">
               <span className="size-1.5 rounded-full bg-accent" />
               A calm place to learn about AI
             </p>
-          </FadeIn>
-          <FadeIn delay={0.08}>
+          </StaggerItem>
+          <StaggerItem>
             <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight text-foreground sm:text-6xl">
               Understand AI, one clear step at a time.
             </h1>
-          </FadeIn>
-          <FadeIn delay={0.16}>
+          </StaggerItem>
+          <StaggerItem>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
               Plain-English lessons, a glossary of key terms, the latest news, and the tools worth knowing about.
               No background needed.
             </p>
-          </FadeIn>
-          <FadeIn delay={0.24}>
+          </StaggerItem>
+          <StaggerItem>
             <div className="mt-10 flex flex-wrap gap-3">
-              <Link
-                href="/learn"
-                className="rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
-              >
-                Start learning
-              </Link>
-              <Link
-                href="/tools"
-                className="rounded-full border border-border bg-surface px-6 py-3 text-sm font-medium text-foreground transition-colors hover:border-accent"
-              >
+              <ButtonLink href="/learn">Start learning</ButtonLink>
+              <ButtonLink href="/tools" variant="secondary">
                 Explore tools
-              </Link>
+              </ButtonLink>
             </div>
-          </FadeIn>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {sections.map((s, i) => (
-            <FadeIn key={s.href} onScroll delay={i * 0.08}>
-              <Link href={s.href} className="group block h-full">
-                <Card className="group-hover:border-accent">
-                  <h2 className="flex items-center justify-between text-lg font-semibold text-foreground">
-                    {s.title}
-                    <span className="text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent">
-                      →
-                    </span>
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
-                </Card>
-              </Link>
-            </FadeIn>
+        <Stagger className="grid gap-4 md:grid-cols-3">
+          {sections.map((s) => (
+            <StaggerItem key={s.href}>
+              <Lift>
+                <Link href={s.href} className="group block h-full">
+                  <Card className="group-hover:border-accent">
+                    <h2 className="flex items-center justify-between text-lg font-semibold text-foreground">
+                      {s.title}
+                      <span className="text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent">
+                        →
+                      </span>
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
+                  </Card>
+                </Link>
+              </Lift>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
     </>
   );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FadeIn } from "@/components/motion/FadeIn";
+import { Reveal } from "@/components/motion/Reveal";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export const metadata: Metadata = { title: "Lab" };
@@ -13,7 +13,7 @@ export default function LabPage() {
         title="The Lab"
         description="A space for hands-on experiments. Coming soon."
       />
-      <FadeIn delay={0.1}>
+      <Reveal delay={0.15}>
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
           <span className="flex size-12 items-center justify-center rounded-full border border-border bg-background text-accent">
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -26,7 +26,7 @@ export default function LabPage() {
             Sign-in and access controls will be added before the Lab opens.
           </p>
         </div>
-      </FadeIn>
+      </Reveal>
     </div>
   );
 }
