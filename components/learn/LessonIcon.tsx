@@ -7,7 +7,7 @@ const toComponentName = (name: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("");
 
-/** A lesson's icon, from the `icon` field in its frontmatter (any name from lucide.dev/icons). */
+/** A lesson or course icon, from its `icon` field (any name from lucide.dev/icons). */
 export function LessonIcon({ name, ...props }: { name?: string } & LucideProps) {
   const Icon = name ? icons[toComponentName(name) as keyof typeof icons] : icons.BookOpen;
   if (!Icon) {

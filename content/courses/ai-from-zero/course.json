@@ -1,0 +1,17 @@
+{
+  "title": "AI from Zero",
+  "description": "Start from nothing and build a clear, practical understanding of AI: what it is, how language models work, and how to run one yourself.",
+  "icon": "sparkles",
+  "accent": "teal",
+  "tags": ["beginner", "fundamentals"],
+  "status": "published",
+  "levels": [
+    {
+      "level": 0,
+      "lessons": ["what-is-ai", "how-language-models-work", "free-ai-toolkit"]
+    },
+    { "level": 1, "lessons": [] },
+    { "level": 2, "lessons": [] },
+    { "level": 3, "lessons": [] }
+  ]
+}

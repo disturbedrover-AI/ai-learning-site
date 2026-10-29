@@ -1,0 +1,43 @@
+{
+  "title": "Claude Certification Prep",
+  "description": "Prepare for Claude certification: how Claude-based systems are designed, how the Model Context Protocol connects them to tools, and how to work with Claude Code.",
+  "icon": "badge-check",
+  "accent": "blue",
+  "tags": ["claude", "certification"],
+  "status": "draft",
+  "tracks": [
+    {
+      "slug": "architecture",
+      "title": "Architecture",
+      "description": "How applications built on Claude are put together: prompts, context, tools and agents.",
+      "levels": [
+        { "level": 0, "lessons": [] },
+        { "level": 1, "lessons": [] },
+        { "level": 2, "lessons": [] },
+        { "level": 3, "lessons": [] }
+      ]
+    },
+    {
+      "slug": "mcp",
+      "title": "Model Context Protocol",
+      "description": "Connect Claude to data and tools with MCP servers and clients.",
+      "levels": [
+        { "level": 0, "lessons": [] },
+        { "level": 1, "lessons": [] },
+        { "level": 2, "lessons": [] },
+        { "level": 3, "lessons": [] }
+      ]
+    },
+    {
+      "slug": "claude-code",
+      "title": "Claude Code",
+      "description": "Use Claude Code to read, change and ship software from your terminal.",
+      "levels": [
+        { "level": 0, "lessons": [] },
+        { "level": 1, "lessons": [] },
+        { "level": 2, "lessons": [] },
+        { "level": 3, "lessons": [] }
+      ]
+    }
+  ]
+}

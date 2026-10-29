@@ -1,32 +1,43 @@
 import type { Metadata } from "next";
+import { BookA } from "lucide-react";
 import { Constellation } from "@/components/brand/Constellation";
-import { LearnPanel, LearningPath, type PathLevel } from "@/components/learn/LearningPath";
+import { CourseCatalogue, type CatalogueCourse } from "@/components/learn/CourseCatalogue";
 import { LessonIcon } from "@/components/learn/LessonIcon";
 import { Reveal } from "@/components/motion/Reveal";
+import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getLearningPath } from "@/lib/content";
+import { courseStats, getCourses, showDrafts, trackLessons } from "@/lib/courses";
 
 export const metadata: Metadata = { title: "Learn" };
 
 export default function LearnPage() {
-  // Only what the path needs, so lesson text isn't sent to the browser.
-  const levels: PathLevel[] = getLearningPath().map(({ lessons, ...level }) => ({
-    ...level,
-    lessons: lessons.map(({ slug, title, summary, duration, tags, level, icon }) => ({
-      slug,
-      title,
-      summary,
-      duration,
-      tags,
-      level,
-      icon: <LessonIcon name={icon} />,
-    })),
-  }));
+  const courses: CatalogueCourse[] = getCourses().map((course) => {
+    const stats = courseStats(course);
+    const firstTrack = course.tracks.find((t) => trackLessons(t).length > 0);
+    const firstLesson = firstTrack && trackLessons(firstTrack)[0].lesson;
+    return {
+      slug: course.slug,
+      title: course.title,
+      description: course.description,
+      icon: <LessonIcon name={course.icon} />,
+      accent: course.accent,
+      tags: course.tags,
+      status: course.status,
+      tracks: course.tracks.length,
+      levels: stats.levels,
+      lessons: stats.lessons,
+      minutes: stats.minutes,
+      ids: stats.ids,
+      // Single-track courses go straight to their track.
+      href:
+        course.tracks.length === 1 ? `/learn/${course.slug}/${course.tracks[0].slug}` : `/learn/${course.slug}`,
+      firstLessonHref: firstTrack && firstLesson && `/learn/${course.slug}/${firstTrack.slug}/${firstLesson.slug}`,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
       <header className="relative">
-        {/* The constellation motif, very faint, behind the page title. */}
         <Reveal
           still
           delay={0.2}
@@ -37,19 +48,22 @@ export default function LearnPage() {
         </Reveal>
         <PageHeader
           eyebrow="Learn"
-          title="From zero to confident"
-          description="A step-by-step path through AI. Start at the top: each lesson is short and builds on the one before."
+          title="Courses"
+          description="Pick a course and climb its four levels, from Foundations to building things yourself. Each lesson is short and builds on the one before."
         />
       </header>
 
-      <div className="mt-6 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
-        <LearningPath levels={levels} />
-        <aside aria-label="Your progress" className="order-first lg:order-none">
-          <div className="lg:sticky lg:top-24">
-            <LearnPanel levels={levels} />
-          </div>
-        </aside>
-      </div>
+      <CourseCatalogue courses={courses} showStatus={showDrafts()} />
+
+      <Reveal className="mt-16 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-surface p-6">
+        <div>
+          <p className="font-display text-xl font-bold text-foreground">Glossary</p>
+          <p className="mt-1 text-sm text-muted">Every term used in the lessons, explained in plain English.</p>
+        </div>
+        <ButtonLink href="/learn/glossary" variant="secondary">
+          <BookA className="size-4" aria-hidden /> Open the glossary
+        </ButtonLink>
+      </Reveal>
     </div>
   );
 }

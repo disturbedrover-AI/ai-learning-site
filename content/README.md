@@ -10,6 +10,92 @@ folder. No code changes are needed: the site picks up new files automatically.
 
 ---
 
+## How Learn is organised
+
+**Course → Track → Level (0–3) → Lesson.**
+
+- A **course** is one file: `courses/<course-slug>/course.json`.
+- A course has one or more **tracks** (paths through it).
+- Each track has **levels 0–3** (Foundations, Core Concepts, Hands-on, Build Things),
+  and each level lists its **lessons** in order, by slug.
+- **Lessons** live in `lessons/`, as one shared pool. A lesson doesn't say where it
+  belongs: tracks list it. The same lesson can appear in several tracks or courses.
+
+Web addresses: `/learn/<course>/<track>/<lesson>`.
+
+## courses/ — JSON (`course.json` in a folder per course)
+
+The folder name is the course's slug (web address). To add a course, copy
+another course's folder, rename it, and edit the file.
+
+**Course with several tracks** (shows a "choose your path" page):
+
+```json
+{
+  "title": "Claude Certification Prep",
+  "description": "One or two sentences.",
+  "icon": "badge-check",
+  "accent": "blue",
+  "tags": ["claude", "certification"],
+  "status": "draft",
+  "tracks": [
+    {
+      "slug": "mcp",
+      "title": "Model Context Protocol",
+      "description": "One sentence about this track.",
+      "levels": [
+        { "level": 0, "lessons": ["lesson-slug", "another-lesson-slug"] },
+        { "level": 1, "lessons": [] },
+        { "level": 2, "lessons": [] },
+        { "level": 3, "lessons": [] }
+      ]
+    }
+  ]
+}
+```
+
+**Course with one track**: leave out `tracks` and put `levels` directly in the
+course. It gets a single track called `main`, named after the course, and the
+course page goes straight to it.
+
+```json
+{
+  "title": "AI from Zero",
+  "description": "…",
+  "icon": "sparkles",
+  "accent": "teal",
+  "tags": ["beginner"],
+  "status": "published",
+  "levels": [{ "level": 0, "lessons": ["what-is-ai", "how-language-models-work"] }]
+}
+```
+
+| Field         | Required | Type                                                                 |
+| ------------- | -------- | -------------------------------------------------------------------- |
+| `title`       | yes      | text                                                                 |
+| `description` | yes      | text (one or two sentences)                                          |
+| `status`      | yes      | `published`, or `draft` (hidden unless `SHOW_DRAFTS=true`)           |
+| `icon`        | no       | an icon name from lucide.dev/icons                                   |
+| `accent`      | no       | `teal`, `blue`, `amber`, `rose` or `accent` (the theme's own colour) |
+| `tags`        | no       | list of text (used by the catalogue's topic filter)                  |
+| `tracks`      | no       | list of tracks (see below); leave out for a one-track course         |
+| `levels`      | no       | only for a one-track course, instead of `tracks`                     |
+
+Each **track**: `slug` (required, lowercase-with-hyphens, unique in the course),
+`title` (required), `description`, and `levels`.
+
+Each **level**: `level` (0–3, required) and `lessons` (lesson slugs, in order).
+Optionally `title` and `description` to rename that level for this track only.
+Levels you leave out show as "coming soon". A lesson can be listed only once per track.
+
+Errors name the file: an unknown lesson slug, a level that doesn't exist, a
+duplicate track slug, a bad `status` or `accent`.
+
+### Levels — `courses/_levels.json`
+
+The default name and description of each level (0–3), used by every track
+unless the track renames a level.
+
 ## lessons/ — MDX (`.mdx`)
 
 Each lesson is one `.mdx` file: Markdown, plus the lesson blocks below. The
@@ -21,8 +107,6 @@ lesson's "On this page" list.
 ---
 title: What is AI, really?
 slug: what-is-ai
-level: 0
-order: 1
 duration: 9
 summary: One or two sentences shown on the learning path.
 tags: [basics, introduction]
@@ -39,8 +123,6 @@ Plain Markdown text…
 | --------------- | -------- | --------------------------------------------------------- | ----------------------- |
 | `title`         | yes      | text                                                      | `What is AI, really?`   |
 | `slug`          | no       | the lesson's web address; defaults to the file name       | `what-is-ai`            |
-| `level`         | yes      | a level number from `lessons/_levels.json`                | `0`                     |
-| `order`         | yes      | number; position within its level                         | `1`                     |
 | `duration`      | yes      | reading time in minutes                                   | `9`                     |
 | `summary`       | yes      | text (one or two sentences)                               | `A plain-English intro` |
 | `tags`          | no       | list of text                                              | `[basics, history]`     |
@@ -48,10 +130,8 @@ Plain Markdown text…
 | `icon`          | no       | an icon name from lucide.dev/icons                        | `brain-circuit`         |
 | `draft`         | no       | `true` hides the lesson from the site                     | `false`                 |
 
-### Levels — `lessons/_levels.json`
-
-The learning path's levels, in order. Each has a `level` number, a `title`
-and a `description`. Levels without lessons show as "coming soon".
+A lesson's level and position come from the tracks that list it (see `courses/`),
+not from the lesson file. A lesson no track lists has no page.
 
 ### Lesson blocks
 

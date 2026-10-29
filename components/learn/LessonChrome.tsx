@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion"
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import type { Heading } from "@/lib/headings";
 import { hoverLift, popover } from "@/lib/motion";
-import { setLessonComplete, useCompletedLessons } from "./progress";
+import { markLessonOpened, setLessonComplete, useCompletedLessons } from "./progress";
 
 /** A thin bar under the header that fills as you read down the page. */
 export function ReadingProgress() {
@@ -66,12 +66,12 @@ export function TableOfContents({ headings }: { headings: Heading[] }) {
 }
 
 /** Toggles this lesson's "done" state for the visitor. */
-export function CompleteButton({ slug }: { slug: string }) {
-  const done = useCompletedLessons().includes(slug);
+export function CompleteButton({ id }: { id: string }) {
+  const done = useCompletedLessons().includes(id);
   return (
     <motion.button
       type="button"
-      onClick={() => setLessonComplete(slug, !done)}
+      onClick={() => setLessonComplete(id, !done)}
       aria-pressed={done}
       {...hoverLift}
       className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-colors ${
@@ -101,7 +101,7 @@ export function CompleteButton({ slug }: { slug: string }) {
   );
 }
 
-type Neighbour = { slug: string; title: string } | undefined;
+type Neighbour = { href: string; title: string } | undefined;
 
 /** A ring that fills as you read, with the percentage in the middle. */
 function ReadingRing() {
@@ -133,7 +133,19 @@ function ReadingRing() {
  * The lesson's side panel: reading progress, "Mark as complete", and the
  * previous / next lessons. On small screens it sits below the lesson.
  */
-export function LessonPanel({ slug, prev, next }: { slug: string; prev: Neighbour; next: Neighbour }) {
+export function LessonPanel({
+  id,
+  position,
+  prev,
+  next,
+}: {
+  /** Progress id, "course/track/lesson". */
+  id: string;
+  /** Where this lesson sits in its track, e.g. "Lesson 2 of 3 in AI from Zero". */
+  position: string;
+  prev: Neighbour;
+  next: Neighbour;
+}) {
   return (
     <div className="space-y-4">
       <div className="rounded-3xl border border-border bg-surface p-5">
@@ -145,8 +157,9 @@ export function LessonPanel({ slug, prev, next }: { slug: string; prev: Neighbou
           </div>
         </div>
         <div className="mt-5">
-          <CompleteButton slug={slug} />
+          <CompleteButton id={id} />
         </div>
+        <p className="mt-3 text-center text-xs text-muted">{position}</p>
       </div>
 
       <nav aria-label="More lessons" className="grid gap-3">
@@ -162,7 +175,7 @@ function NeighbourLink({ lesson, direction }: { lesson: NonNullable<Neighbour>; 
   return (
     <motion.div {...hoverLift}>
       <Link
-        href={`/learn/${lesson.slug}`}
+        href={lesson.href}
         className="group block rounded-2xl border border-border p-4 transition-colors hover:border-level/60"
       >
         <span className="flex items-center gap-1 text-xs text-muted">
@@ -174,4 +187,10 @@ function NeighbourLink({ lesson, direction }: { lesson: NonNullable<Neighbour>; 
       </Link>
     </motion.div>
   );
+}
+
+/** Remembers this lesson as the last one opened in its course (for "Continue" links). Renders nothing. */
+export function RememberLesson({ id }: { id: string }) {
+  useEffect(() => markLessonOpened(id), [id]);
+  return null;
 }

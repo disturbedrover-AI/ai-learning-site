@@ -20,7 +20,7 @@ developer, so explain changes in simple terms.
 This Next.js version differs from older ones. Read `AGENTS.md` and the docs in
 `node_modules/next/dist/docs/` before using unfamiliar Next.js APIs.
 
-Commands: `npm run dev` (local site at http://localhost:3000), `npm run build`, `npm run lint`.
+Commands: `npm run dev` (local site at http://localhost:3000; `SHOW_DRAFTS=true npm run dev` to include draft courses), `npm run build`, `npm run lint`. After adding or moving route folders, `npx next typegen` refreshes route types.
 
 ## Folder structure
 
@@ -30,7 +30,10 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
   globals.css         Tailwind setup; maps theme variables to Tailwind colours.
   themes.css          ALL theme colour definitions (one block per theme).
   page.tsx            Home page.
-  learn/              Learning path (page.tsx), lesson pages ([slug]/), glossary (glossary/).
+  learn/              Course catalogue (page.tsx), glossary (glossary/), and
+    [course]/         a course's "choose your path" page,
+      [track]/        a track's level path,
+        [lesson]/     a lesson page.
   news/ tools/ lab/   One folder per section.
 components/
   layout/             Header, Footer, Logo.
@@ -38,12 +41,13 @@ components/
   motion/             Reveal, Stagger/StaggerItem, Lift, Counter: the only animation wrappers.
   brand/              The site's visual motif (Constellation).
   ui/                 Small shared building blocks (Card, Tag, PageHeader, Button).
-  learn/              Learning path, lesson page parts, glossary browser, progress tracking.
+  learn/              Catalogue, learning path, lesson page parts, glossary browser, progress tracking.
     blocks/           Lesson blocks: Definition, Term, Example, TryIt, KeyPoint, Quiz, Explainer.
     lesson.css        Reading styles for lesson text.
   explainers/         Interactive animated explainers + registry.ts (name → component).
 content/              ALL site content as files (see content/README.md for schemas).
-  lessons/            MDX, one file per lesson, plus _levels.json (the path's levels).
+  courses/            One folder per course with course.json (details + tracks), plus _levels.json.
+  lessons/            MDX, one file per lesson (a shared pool used by tracks).
   glossary/           JSON, one file per term.
   news/               Markdown, one file per post.
   tools/              JSON, one file per tool.
@@ -51,9 +55,10 @@ lib/
   site.ts             Site name, description, navigation items.
   themes.ts           List of themes shown in the switcher.
   motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
-  content.ts          Reads and validates the files in content/.
+  content.ts          Reads and validates lessons, glossary, news and tools.
+  courses.ts          Reads and validates courses and tracks; links them to lessons.
   headings.ts         Heading ids and the lesson table of contents.
-  levels.ts           levelStyle(): picks a level colour for an element.
+  levels.ts           levelStyle() / hueStyle(): pick a level or course colour for an element.
 public/               Static files (images, favicon).
 ```
 
@@ -151,22 +156,51 @@ lucide.dev icon name (e.g. `brain-circuit`); it's rendered by `LessonIcon`.
 
 ## Learn section
 
-Content schemas (lesson frontmatter, levels, blocks, glossary) are documented in
-`content/README.md`. Keep it in sync with `lib/content.ts`.
+**Hierarchy: Course → Track → Level (0–3) → Lesson.**
+- A course (`content/courses/<course>/course.json`) has details (title, description,
+  icon, accent colour, tags, status) and one or more tracks.
+- A track lists, for each level 0–3, the slugs of its lessons in order.
+- Lessons (`content/lessons/*.mdx`) are a shared pool. Their level and position come
+  from the tracks that list them, never from the lesson file.
+- A course without `tracks` gets one track, `main`, named after the course; its course
+  page redirects straight to that track.
+- Addresses: `/learn` (catalogue), `/learn/<course>` (choose a track), `/learn/<course>/<track>`
+  (the level path), `/learn/<course>/<track>/<lesson>`. Previous/next and the lesson
+  number follow the track. Old `/learn/<lesson>` addresses redirect to the lesson's
+  first published track. "glossary" can't be used as a course slug.
+- `status: "draft"` courses are hidden (catalogue, Home, their pages) unless the
+  environment setting `SHOW_DRAFTS=true` is on, e.g. `SHOW_DRAFTS=true npm run dev`.
+  The catalogue's status filter only appears then.
+
+Schemas (course.json, levels, lesson frontmatter, blocks, glossary) are documented in
+`content/README.md`. Keep it in sync with `lib/courses.ts` and `lib/content.ts`.
+
+**Add a course**
+1. Copy a folder in `content/courses/` (e.g. `ai-from-zero`), rename it to the new
+   course's slug, and edit `course.json`: title, description, icon, accent, tags, status.
+2. One path through it: keep `levels`. Several: use `tracks` (see `claude-certification`).
+3. It appears in the catalogue automatically (published courses also appear on Home).
+
+**Add a track** to a course: add an entry to its `tracks` list with `slug`, `title`,
+`description` and `levels` 0–3. (A one-track course: move its `levels` into a first
+track, since a course uses either `levels` or `tracks`.)
 
 **Add a lesson**
 1. Create `content/lessons/<slug>.mdx` with the frontmatter from `content/README.md`
-   (`title`, `slug`, `level`, `order`, `duration`, `summary`, `tags`, `prerequisites`).
+   (`title`, `slug`, `duration`, `summary`, `tags`, `prerequisites`, `icon`).
 2. Write the text in Markdown with `##` section headings; use blocks
    (`Definition`, `Term`, `Example`, `TryIt`, `KeyPoint`, `Quiz`, `Explainer`) where they help.
-3. It appears on the learning path automatically, in its level, sorted by `order`.
-   Prerequisites and levels are checked: a typo shows an error naming the file.
+3. **Assign it to a track**: add its slug to a level's `lessons` list in a
+   `course.json`, at the position it should appear. Until a track lists it, it has no page.
+
+**Share a lesson between tracks**: list the same slug in each track's level (it can
+sit at a different level or position in each). Progress is kept separately per track.
 
 **Add a glossary term**
 1. Create `content/glossary/<term-name>.json` with `term`, `definition`, and optional
    `aliases` and `related`.
 2. `<Definition term="…">` and `<Term>` in lessons link to it automatically
-   (matched by file name, term or alias).
+   (matched by file name, term or alias). The glossary's course filter comes from these.
 
 **Add an explainer**
 1. Create `components/explainers/<Name>.tsx`: starts with `"use client"`, default export,
@@ -178,8 +212,9 @@ Content schemas (lesson frontmatter, levels, blocks, glossary) are documented in
 `components/learn/LessonBody.tsx`. A new block = a new file there + one entry in
 that list + a row in `content/README.md`.
 
-**Progress** ("Mark as complete") is stored in the visitor's browser
-(`localStorage`, key `completed-lessons`) via `components/learn/progress.ts`.
+**Progress** is stored in the visitor's browser by `components/learn/progress.ts`
+(`localStorage`): `learn-completed` (ids `course/track/lesson`, so each track keeps its
+own progress) and `learn-last-opened` (last lesson per course, for "Continue" links).
 Replace that file's internals when real accounts arrive.
 
 ## Standing rules

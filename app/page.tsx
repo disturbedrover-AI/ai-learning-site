@@ -5,8 +5,10 @@ import { Lift } from "@/components/motion/Lift";
 import { Reveal } from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { ButtonLink } from "@/components/ui/Button";
-import { getLearningPath } from "@/lib/content";
-import { levelStyle } from "@/lib/levels";
+import { LessonIcon } from "@/components/learn/LessonIcon";
+import { ProgressMeter } from "@/components/learn/ProgressMeter";
+import { courseStats, getCourses } from "@/lib/courses";
+import { hueStyle } from "@/lib/levels";
 
 const sections = [
   {
@@ -30,7 +32,8 @@ const sections = [
 ];
 
 export default function HomePage() {
-  const levels = getLearningPath();
+  // Featured: published courses only, even when drafts are being previewed.
+  const featured = getCourses({ drafts: false });
   const [learn, ...others] = sections;
 
   return (
@@ -91,36 +94,63 @@ export default function HomePage() {
         <Stagger className="grid gap-4 md:grid-cols-3 md:grid-rows-2">
           {/* Learn is the main thing on the site, so its card is the big one. */}
           <StaggerItem className="md:col-span-2 md:row-span-2">
-            <Lift>
-              <Link
-                href={learn.href}
-                className="group flex h-full flex-col justify-between gap-10 rounded-3xl border border-border bg-surface p-8 transition-colors hover:border-accent sm:p-10"
-              >
-                <div>
-                  <learn.icon className="size-7 text-accent" strokeWidth={1.75} aria-hidden />
-                  <h2 className="mt-6 flex items-center gap-3 text-3xl font-bold text-foreground sm:text-4xl">
+            <div className="flex h-full flex-col gap-8 rounded-3xl border border-border bg-surface p-8 sm:p-10">
+              <div>
+                <learn.icon className="size-7 text-accent" strokeWidth={1.75} aria-hidden />
+                <h2 className="mt-6 text-3xl font-bold text-foreground sm:text-4xl">
+                  <Link href={learn.href} className="group inline-flex items-center gap-3">
                     {learn.title}
                     <ArrowRight
                       className="size-6 text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent"
                       aria-hidden
                     />
-                  </h2>
-                  <p className="mt-3 max-w-md leading-relaxed text-muted">{learn.text}</p>
+                  </Link>
+                </h2>
+                <p className="mt-3 max-w-md leading-relaxed text-muted">{learn.text}</p>
+                <p className="mt-2 text-sm text-muted">
+                  Every course climbs four levels: Foundations, Core Concepts, Hands-on and Build Things.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold tracking-[0.14em] text-muted uppercase">Featured courses</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {featured.map((course) => {
+                    const href =
+                      course.tracks.length === 1
+                        ? `/learn/${course.slug}/${course.tracks[0].slug}`
+                        : `/learn/${course.slug}`;
+                    return (
+                      <Lift key={course.slug}>
+                        <Link
+                          href={href}
+                          style={hueStyle(course.accent)}
+                          className="group flex h-full flex-col rounded-2xl border border-border bg-background p-4 transition-[border-color,box-shadow] hover:border-level/60 hover:ring-4 hover:ring-level/10"
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-level/10 text-level">
+                              <LessonIcon name={course.icon} className="size-4.5" />
+                            </span>
+                            <span className="font-display text-lg leading-tight font-bold text-foreground">
+                              {course.title}
+                            </span>
+                          </span>
+                          <span className="mt-2 line-clamp-1 text-sm text-muted">{course.description}</span>
+                          <ProgressMeter ids={courseStats(course).ids} onlyIfStarted className="mt-3" />
+                        </Link>
+                      </Lift>
+                    );
+                  })}
                 </div>
-                <ol className="grid gap-2 sm:grid-cols-4">
-                  {levels.map((level) => (
-                    <li
-                      key={level.level}
-                      style={levelStyle(level.level)}
-                      className="rounded-2xl border border-level/25 bg-level/[0.06] px-4 py-3"
-                    >
-                      <span className="font-display text-2xl font-bold text-level">{level.level}</span>
-                      <span className="mt-0.5 block text-sm font-medium text-foreground">{level.title}</span>
-                    </li>
-                  ))}
-                </ol>
-              </Link>
-            </Lift>
+                <Link
+                  href="/learn"
+                  className="group mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent"
+                >
+                  Browse all courses
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                </Link>
+              </div>
+            </div>
           </StaggerItem>
 
           {others.map((s) => (

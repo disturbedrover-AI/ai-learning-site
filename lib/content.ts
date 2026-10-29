@@ -8,18 +8,14 @@ import matter from "gray-matter";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 
-export type Level = {
-  level: number;
-  title: string;
-  description: string;
-};
-
+/**
+ * A lesson. Lessons are a shared pool: which course, track and level they
+ * belong to is set in content/courses (see lib/courses.ts), not here.
+ */
 export type Lesson = {
   slug: string;
   title: string;
   summary: string;
-  level: number;
-  order: number;
   /** Reading time in minutes. */
   duration: number;
   tags: string[];
@@ -32,7 +28,6 @@ export type Lesson = {
   file: string;
 };
 
-export type LevelWithLessons = Level & { lessons: Lesson[] };
 
 export type GlossaryTerm = {
   slug: string;
@@ -101,50 +96,22 @@ function requireFields(file: RawFile, fields: string[]) {
 const list = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);
 const optional = (value: unknown) => (value ? String(value) : undefined);
 
-/** The learning-path levels, from content/lessons/_levels.json. */
-export function getLevels(): Level[] {
-  const file = "content/lessons/_levels.json";
-  let raw: unknown;
-  try {
-    raw = JSON.parse(fs.readFileSync(path.join(process.cwd(), file), "utf8"));
-  } catch {
-    throw new Error(`${file} is missing or is not valid JSON.`);
-  }
-  if (!Array.isArray(raw)) throw new Error(`${file} must be a list of levels.`);
-  return raw
-    .map((l, i) => {
-      if (typeof l?.level !== "number" || !l?.title) {
-        throw new Error(`${file}: level #${i + 1} needs a "level" number and a "title".`);
-      }
-      return { level: l.level, title: String(l.title), description: String(l.description ?? "") };
-    })
-    .sort((a, b) => a.level - b.level);
-}
+export const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const RESERVED_SLUGS = ["glossary"];
-
-/** All published lessons, in learning-path order (by level, then order). */
-export function getLessons(): Lesson[] {
-  const levels = getLevels().map((l) => l.level);
+/** All lessons that aren't drafts (or all of them, with `drafts: true`), sorted by slug. Courses decide their order. */
+export function getLessons({ drafts = false } = {}): Lesson[] {
   const lessons = readFolder("lessons", [".mdx", ".md"])
-    .filter((f) => f.data.draft !== true)
+    .filter((f) => drafts || f.data.draft !== true)
     .map((f) => {
-      requireFields(f, ["title", "summary", "level", "order", "duration"]);
+      requireFields(f, ["title", "summary", "duration"]);
       const slug = f.data.slug ? String(f.data.slug) : f.slug;
-      const level = Number(f.data.level);
-      if (!SLUG.test(slug) || RESERVED_SLUGS.includes(slug)) {
-        throw new Error(`${f.file}: slug "${slug}" must be lowercase words joined by hyphens (and not "glossary").`);
-      }
-      if (!levels.includes(level)) {
-        throw new Error(`${f.file}: level ${f.data.level} doesn't exist. Use one of: ${levels.join(", ")}.`);
+      if (!SLUG.test(slug)) {
+        throw new Error(`${f.file}: slug "${slug}" must be lowercase words joined by hyphens.`);
       }
       return {
         slug,
         title: String(f.data.title),
         summary: String(f.data.summary),
-        level,
-        order: Number(f.data.order),
         duration: Number(f.data.duration),
         tags: list(f.data.tags),
         prerequisites: list(f.data.prerequisites),
@@ -153,7 +120,7 @@ export function getLessons(): Lesson[] {
         file: f.file,
       };
     })
-    .sort((a, b) => a.level - b.level || a.order - b.order);
+    .sort((a, b) => a.slug.localeCompare(b.slug));
 
   const slugs = new Set<string>();
   for (const lesson of lessons) {
@@ -171,12 +138,6 @@ export function getLessons(): Lesson[] {
 
 export function getLesson(slug: string): Lesson | undefined {
   return getLessons().find((l) => l.slug === slug);
-}
-
-/** Every level with its lessons, in order. Levels without lessons are kept (shown as "coming soon"). */
-export function getLearningPath(): LevelWithLessons[] {
-  const lessons = getLessons();
-  return getLevels().map((level) => ({ ...level, lessons: lessons.filter((l) => l.level === level.level) }));
 }
 
 export function getGlossary(): GlossaryTerm[] {

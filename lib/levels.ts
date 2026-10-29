@@ -12,3 +12,12 @@ export function levelStyle(level: number): CSSProperties {
   const hue = ((level % 4) + 4) % 4;
   return { "--level": `var(--level-${hue})` } as CSSProperties;
 }
+
+/** Colours a course can use as its accent: the four level hues, or the theme's accent. */
+export const HUES = ["teal", "blue", "amber", "rose", "accent"] as const;
+export type Hue = (typeof HUES)[number];
+
+/** Like levelStyle, but for a course's accent colour (so text-level, bg-level/10, … use it). */
+export function hueStyle(hue: Hue): CSSProperties {
+  return { "--level": hue === "accent" ? "var(--accent)" : `var(--level-${HUES.indexOf(hue)})` } as CSSProperties;
+}

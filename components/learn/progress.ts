@@ -1,36 +1,47 @@
 "use client";
 
 /*
- * Remembers which lessons this visitor has finished, in their browser only
+ * Remembers this visitor's learning progress, in their browser only
  * (localStorage). Real accounts will replace this later.
+ *
+ * Lessons are tracked per track, by id "course/track/lesson" (the same as the
+ * lesson's address after /learn/), so finishing a lesson in one track doesn't
+ * tick it off in another.
  */
 import { useSyncExternalStore } from "react";
 
-const KEY = "completed-lessons";
-const CHANGE = "completed-lessons-change";
-const none: string[] = [];
+const COMPLETED = "learn-completed"; // list of lesson ids
+const LAST_OPENED = "learn-last-opened"; // { course: lesson id }
+const CHANGE = "learn-progress-change";
 
-let lastRaw: string | null = null;
-let lastValue: string[] = none;
+// Parsed values are cached per key so React sees a stable value until the stored text changes.
+const cache = new Map<string, { raw: string | null; value: unknown }>();
 
-function read(): string[] {
+function read<T>(key: string, fallback: T, valid: (v: unknown) => boolean): T {
   let raw: string | null = null;
   try {
-    raw = localStorage.getItem(KEY);
+    raw = localStorage.getItem(key);
   } catch {
-    return none;
+    return fallback;
   }
-  // Only parse when the stored text changed, so React sees a stable list.
-  if (raw !== lastRaw) {
-    lastRaw = raw;
-    try {
-      const parsed = JSON.parse(raw ?? "[]");
-      lastValue = Array.isArray(parsed) ? parsed.map(String) : none;
-    } catch {
-      lastValue = none;
-    }
+  const hit = cache.get(key);
+  if (hit && hit.raw === raw) return hit.value as T;
+  let value: T = fallback;
+  try {
+    const parsed = JSON.parse(raw ?? "null");
+    if (valid(parsed)) value = parsed as T;
+  } catch {}
+  cache.set(key, { raw, value });
+  return value;
+}
+
+function write(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage unavailable (e.g. private mode): nothing to remember.
   }
-  return lastValue;
+  window.dispatchEvent(new Event(CHANGE));
 }
 
 function subscribe(onChange: () => void) {
@@ -42,17 +53,32 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** Slugs of the lessons this visitor has marked complete. Empty until the page has loaded. */
+const noIds: string[] = [];
+const noLast: Record<string, string> = {};
+const readCompleted = () => read(COMPLETED, noIds, Array.isArray);
+const readLastOpened = () => read(LAST_OPENED, noLast, (v) => !!v && typeof v === "object" && !Array.isArray(v));
+
+/** Ids ("course/track/lesson") of the lessons this visitor has completed. Empty until the page has loaded. */
 export function useCompletedLessons(): string[] {
-  return useSyncExternalStore(subscribe, read, () => none);
+  return useSyncExternalStore(subscribe, readCompleted, () => noIds);
 }
 
-export function setLessonComplete(slug: string, complete: boolean) {
-  const current = read().filter((s) => s !== slug);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(complete ? [...current, slug] : current));
-  } catch {
-    // Storage unavailable (e.g. private mode): nothing to remember.
-  }
-  window.dispatchEvent(new Event(CHANGE));
+/** The last lesson opened in each course: { course: "course/track/lesson" }. */
+export function useLastOpened(): Record<string, string> {
+  return useSyncExternalStore(subscribe, readLastOpened, () => noLast);
+}
+
+export function setLessonComplete(id: string, complete: boolean) {
+  const current = readCompleted().filter((i) => i !== id);
+  write(COMPLETED, complete ? [...current, id] : current);
+}
+
+export function markLessonOpened(id: string) {
+  const course = id.split("/")[0];
+  if (readLastOpened()[course] !== id) write(LAST_OPENED, { ...readLastOpened(), [course]: id });
+}
+
+/** Share of `ids` completed, 0–100. */
+export function percentDone(ids: string[], completed: string[]) {
+  return ids.length ? Math.round((ids.filter((id) => completed.includes(id)).length / ids.length) * 100) : 0;
 }

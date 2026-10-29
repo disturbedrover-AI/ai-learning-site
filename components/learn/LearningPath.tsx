@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, BookA, Check, Clock, Wrench } from "lucide-react";
-import type { Lesson, Level } from "@/lib/content";
+import type { Lesson } from "@/lib/content";
+import type { Level } from "@/lib/courses";
 import { levelStyle } from "@/lib/levels";
 import { Counter } from "@/components/motion/Counter";
 import { Lift } from "@/components/motion/Lift";
@@ -11,7 +12,11 @@ import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { ButtonLink } from "@/components/ui/Button";
 import { useCompletedLessons } from "./progress";
 
-export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" | "tags" | "level"> & {
+export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" | "tags"> & {
+  /** Progress id, "course/track/lesson". */
+  id: string;
+  href: string;
+  level: number;
   /** The lesson's icon, already rendered on the server. */
   icon: React.ReactNode;
 };
@@ -21,12 +26,12 @@ export type PathLevel = Level & { lessons: PathLesson[] };
 function useProgress(levels: PathLevel[]) {
   const completed = useCompletedLessons();
   const all = levels.flatMap((l) => l.lessons);
-  const isDone = (slug: string) => completed.includes(slug);
+  const isDone = (id: string) => completed.includes(id);
   return {
     all,
     isDone,
-    doneCount: all.filter((l) => isDone(l.slug)).length,
-    nextUp: all.find((l) => !isDone(l.slug)),
+    doneCount: all.filter((l) => isDone(l.id)).length,
+    nextUp: all.find((l) => !isDone(l.id)),
   };
 }
 
@@ -70,7 +75,7 @@ export function LearningPath({ levels }: { levels: PathLevel[] }) {
             {!empty && (
               <Stagger as="ol" className="mt-8">
                 {level.lessons.map((lesson, i) => {
-                  const done = isDone(lesson.slug);
+                  const done = isDone(lesson.id);
                   const isNext = lesson.slug === nextUp?.slug;
                   const last = i === level.lessons.length - 1;
                   return (
@@ -102,7 +107,7 @@ export function LearningPath({ levels }: { levels: PathLevel[] }) {
 
                       <Lift className="min-w-0 flex-1">
                         <Link
-                          href={`/learn/${lesson.slug}`}
+                          href={lesson.href}
                           className={`group flex gap-4 rounded-2xl border bg-surface p-5 transition-[border-color,box-shadow,opacity] hover:border-level/60 hover:ring-4 hover:ring-level/10 sm:p-6 ${
                             isNext ? "border-level/40" : "border-border"
                           } ${done ? "opacity-70 hover:opacity-100" : ""}`}
@@ -169,7 +174,7 @@ export function LearnPanel({ levels }: { levels: PathLevel[] }) {
             >
               <span
                 className={`block size-full origin-left rounded-full bg-level transition-transform duration-500 ease-out ${
-                  isDone(lesson.slug) ? "scale-x-100" : "scale-x-0"
+                  isDone(lesson.id) ? "scale-x-100" : "scale-x-0"
                 }`}
               />
             </span>
@@ -199,9 +204,14 @@ export function LearnPanel({ levels }: { levels: PathLevel[] }) {
                   <p className="mt-0.5 font-display text-lg leading-snug font-bold text-foreground">{nextUp.title}</p>
                 </div>
               </div>
-              <ButtonLink href={`/learn/${nextUp.slug}`} className="mt-5 w-full">
+              <ButtonLink href={nextUp.href} className="mt-5 w-full">
                 {doneCount ? "Continue" : "Start the first lesson"} <ArrowRight className="size-4" aria-hidden />
               </ButtonLink>
+            </>
+          ) : all.length === 0 ? (
+            <>
+              <p className="font-display text-lg font-bold text-foreground">Lessons coming soon</p>
+              <p className="mt-1 text-sm text-muted">This track is ready; its lessons are being written.</p>
             </>
           ) : (
             <>

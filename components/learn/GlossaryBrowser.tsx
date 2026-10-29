@@ -7,15 +7,30 @@ import { duration, ease } from "@/lib/motion";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-/** Searchable, A–Z filterable list of glossary terms. Each term has an #id so lessons can link to it. */
-export function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
+/**
+ * Searchable, A–Z filterable list of glossary terms. Each term has an #id so lessons can link to it.
+ * Optionally filtered to the terms a course's lessons use.
+ */
+export function GlossaryBrowser({
+  terms,
+  courses = [],
+  termCourses = {},
+}: {
+  terms: GlossaryTerm[];
+  /** Courses that use at least one term, for the course filter. */
+  courses?: { slug: string; title: string }[];
+  /** Term slug → slugs of the courses whose lessons use it. */
+  termCourses?: Record<string, string[]>;
+}) {
   const [query, setQuery] = useState("");
   const [letter, setLetter] = useState<string | null>(null);
+  const [course, setCourse] = useState<string | null>(null);
 
   const firstLetter = (t: GlossaryTerm) => t.term[0].toUpperCase();
-  const available = new Set(terms.map(firstLetter));
+  const inCourse = terms.filter((t) => !course || termCourses[t.slug]?.includes(course));
+  const available = new Set(inCourse.map(firstLetter));
   const q = query.trim().toLowerCase();
-  const shown = terms.filter(
+  const shown = inCourse.filter(
     (t) =>
       (!letter || firstLetter(t) === letter) &&
       (!q || [t.term, t.definition, ...t.aliases].some((text) => text.toLowerCase().includes(q))),
@@ -51,6 +66,30 @@ export function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
           className="w-full rounded-full border border-border bg-surface py-3 pr-4 pl-11 text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
         />
       </div>
+
+      {courses.length > 0 && (
+        <div role="group" aria-label="Filter by course" className="mt-4 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-xs font-semibold text-muted">Course</span>
+          {[{ slug: null, title: "All courses" }, ...courses].map((c) => (
+            <button
+              key={c.slug ?? "all"}
+              type="button"
+              aria-pressed={course === c.slug}
+              onClick={() => {
+                setCourse(c.slug);
+                setLetter(null);
+              }}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                course === c.slug
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-border text-muted hover:text-foreground"
+              }`}
+            >
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div role="group" aria-label="Filter by first letter" className="mt-4 flex flex-wrap gap-1">
         <LetterButton active={letter === null} onClick={() => setLetter(null)}>

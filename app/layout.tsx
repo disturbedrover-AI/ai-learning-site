@@ -42,6 +42,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
+      // Lets Next turn off smooth scrolling while it changes pages.
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
