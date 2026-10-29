@@ -38,7 +38,9 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
     [course]/         a course's "choose your path" page,
       [track]/        a track's level path,
         [lesson]/     a lesson page.
-  news/ tools/ lab/   One folder per section.
+  news/               News list (page.tsx), item pages ([slug]/), RSS feed (rss.xml/).
+  tools/              Tool directory (page.tsx) and tool pages ([slug]/).
+  lab/                Lab placeholder.
 components/
   layout/             Header, Footer, Logo.
   auth/               AuthProvider (who's signed in), LoginForm, AccountView, AccountMenu, Avatar.
@@ -47,15 +49,17 @@ components/
   brand/              The site's visual motif (Constellation).
   ui/                 Small shared building blocks (Card, Tag, PageHeader, Button).
   learn/              Catalogue, learning path, lesson page parts, glossary browser, progress tracking.
-    blocks/           Lesson blocks: Definition, Term, Example, TryIt, KeyPoint, Quiz, Explainer.
+    blocks/           Lesson blocks: Definition, Term, Example, TryIt, KeyPoint, Quiz, Explainer, ToolCard.
     lesson.css        Reading styles for lesson text.
   explainers/         Interactive animated explainers + registry.ts (name → component).
+  news/               NewsCard (with type badge), NewsBrowser (filters, month groups).
+  tools/              ToolParts (logo, badges, platform icons, compact card), ToolsBrowser (filters).
 content/              ALL site content as files (see content/README.md for schemas).
   courses/            One folder per course with course.json (details + tracks), plus _levels.json.
   lessons/            MDX, one file per lesson (a shared pool used by tracks).
   glossary/           JSON, one file per term.
-  news/               Markdown, one file per post.
-  tools/              JSON, one file per tool.
+  news/               Markdown, one file per item: <yyyy-mm-dd>-<slug>.md.
+  tools/              Markdown, one file per tool: <slug>.md.
 lib/
   supabase/           config.ts (env keys), client.ts (browser), server.ts (server; reads cookies).
   auth/               providers.ts (sign-in options), roles.ts (role names, hasRole),
@@ -64,6 +68,8 @@ lib/
   themes.ts           List of themes shown in the switcher.
   motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
   content.ts          Reads and validates lessons, glossary, news and tools.
+  taxonomy.ts         Fixed lists for news and tools (types, categories, pricing…) with labels and colours.
+  related.ts          Links between news, tools and lessons (and checks they exist).
   courses.ts          Reads and validates courses and tracks; links them to lessons.
   headings.ts         Heading ids and the lesson table of contents.
   levels.ts           levelStyle() / hueStyle(): pick a level or course colour for an element.
@@ -199,7 +205,7 @@ track, since a course uses either `levels` or `tracks`.)
 1. Create `content/lessons/<slug>.mdx` with the frontmatter from `content/README.md`
    (`title`, `slug`, `duration`, `summary`, `tags`, `prerequisites`, `icon`).
 2. Write the text in Markdown with `##` section headings; use blocks
-   (`Definition`, `Term`, `Example`, `TryIt`, `KeyPoint`, `Quiz`, `Explainer`) where they help.
+   (`Definition`, `Term`, `Example`, `TryIt`, `KeyPoint`, `Quiz`, `Explainer`, `ToolCard`) where they help.
 3. **Assign it to a track**: add its slug to a level's `lessons` list in a
    `course.json`, at the position it should appear. Until a track lists it, it has no page.
 
@@ -231,6 +237,37 @@ Lesson ids are `course/track/lesson`, so each track keeps its own progress.
   lost), then cleared from the browser, only after the save succeeds.
 To change where progress lives, change that one file; pages don't need to change.
 
+## News and tools
+
+Both are file-based, like lessons. Full field lists: `content/README.md`.
+
+**Add a news item**
+1. Create `content/news/<yyyy-mm-dd>-<slug>.md` (e.g. `2026-11-02-new-model.md`).
+2. Fill in the frontmatter: `title`, `date`, `source`, `sourceUrl`, `type`
+   (`model | tool | research | policy | tutorial | other`), `tags`, `summary`,
+   `whyItMatters`, and optionally `relatedLesson`, `relatedTool`, `featured: true`.
+3. Optionally write longer text below the frontmatter (shown on its page).
+It appears on /news (grouped by month), in the RSS feed, and the newest three show on Home.
+
+**Add a tool**
+1. Create `content/tools/<slug>.md`.
+2. Fill in: `name`, `url`, `category`, `pricing`, `openSource`, `platforms`, `tagline`,
+   `goodFor`, optional `notGoodFor`, `difficulty`, `tags`, `featured`, `ownerNote`, `dateAdded`.
+3. Optionally write a description below the frontmatter (shown under "About").
+Featured tools show on Home. Its page automatically lists news that names it
+(`relatedTool`) or shares a tag, and lessons that mention its name.
+
+**Show a tool inside a lesson**: `<ToolCard slug="ollama" />` (a compact card linking to
+the tool's page; a wrong slug shows an error listing the valid ones).
+
+**Colours**: each news type and tool category has a palette colour, set in
+`lib/taxonomy.ts` (the logo placeholder uses the category colour). Adding a type or
+category means adding it there; content files are checked against those lists.
+
+**Links**: `relatedLesson` / `relatedTool` are checked when the site builds; a typo
+shows an error naming the file. Set `NEXT_PUBLIC_SITE_URL` to the live address so
+links in the RSS feed are correct.
+
 ## Accounts (Supabase)
 
 The site works without accounts: until the keys are set, there's no "Sign in"
@@ -242,6 +279,7 @@ button and progress stays in the browser.
 - `NEXT_PUBLIC_AUTH_GOOGLE`: Google sign-in is shown unless this is `false`.
 - `NEXT_PUBLIC_AUTH_LINKEDIN`: LinkedIn is hidden until this is `true`.
 - `SHOW_DRAFTS`: show draft courses.
+- `NEXT_PUBLIC_SITE_URL`: the site's public address (used in the RSS feed).
 Restart `npm run dev` after changing `.env.local`.
 
 **One-time setup in the Supabase dashboard**
@@ -294,6 +332,6 @@ their own profile and progress. Users can change their profile's name and avatar
 ## Notes
 
 - The Lab page is a placeholder; it isn't gated yet (next step: `requireRole("member")`).
-- News items are listed but don't yet have their own detail pages.
+- The six news items are samples (each file says so in a comment); replace them with real news.
 
 @AGENTS.md

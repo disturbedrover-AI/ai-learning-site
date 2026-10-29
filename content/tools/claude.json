@@ -1,8 +1,0 @@
-{
-  "name": "Claude",
-  "description": "An AI assistant from Anthropic for writing, analysis, coding, and answering questions in conversation.",
-  "url": "https://claude.ai",
-  "category": "Chat assistant",
-  "pricing": "freemium",
-  "tags": ["writing", "coding", "research"]
-}

@@ -5,6 +5,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import {
+  DIFFICULTIES,
+  NEWS_TYPES,
+  PLATFORMS,
+  PRICING,
+  TOOL_CATEGORIES,
+  type Difficulty,
+  type NewsType,
+  type Platform,
+  type Pricing,
+  type ToolCategory,
+} from "./taxonomy";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 
@@ -38,24 +50,43 @@ export type GlossaryTerm = {
 };
 
 export type NewsItem = {
+  /** From the file name, without the date: 2024-07-23-llama-3-1.md → "llama-3-1". */
   slug: string;
   title: string;
-  summary: string;
+  /** "YYYY-MM-DD". */
   date: string;
-  source?: string;
-  sourceUrl?: string;
+  source: string;
+  sourceUrl: string;
+  type: NewsType;
   tags: string[];
+  summary: string;
+  whyItMatters: string;
+  relatedLesson?: string;
+  relatedTool?: string;
+  featured: boolean;
   body: string;
+  file: string;
 };
 
 export type Tool = {
   slug: string;
   name: string;
-  description: string;
   url: string;
-  category: string;
-  pricing?: "free" | "freemium" | "paid";
+  category: ToolCategory;
+  pricing: Pricing;
+  openSource: boolean;
+  platforms: Platform[];
+  tagline: string;
+  goodFor: string[];
+  notGoodFor: string[];
+  difficulty: Difficulty;
   tags: string[];
+  featured: boolean;
+  ownerNote?: string;
+  /** "YYYY-MM-DD". */
+  dateAdded: string;
+  body: string;
+  file: string;
 };
 
 type RawFile = { slug: string; file: string; data: Record<string, unknown>; body: string };
@@ -81,8 +112,16 @@ function readFolder(folder: string, extensions: Extension[]): RawFile[] {
           throw new Error(`${file} is not valid JSON. Check for missing commas or quotes.`);
         }
       }
-      const { data, content } = matter(raw);
-      return { slug, file, data, body: content.trim() };
+      let parsed;
+      try {
+        parsed = matter(raw);
+      } catch (error) {
+        throw new Error(
+          `${file}: the details between the --- lines couldn't be read (${(error as Error).message.split("\n")[0]}). ` +
+            `If a value contains ": " or starts with a quote, wrap the whole value in double quotes.`,
+        );
+      }
+      return { slug, file, data: parsed.data, body: parsed.content.trim() };
     });
 }
 
@@ -95,6 +134,40 @@ function requireFields(file: RawFile, fields: string[]) {
 
 const list = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);
 const optional = (value: unknown) => (value ? String(value) : undefined);
+
+/** A copy of a news item or tool without its long text, for lists sent to the browser. */
+export function withoutBody<T extends { body: string; file: string }>(item: T): Omit<T, "body" | "file"> {
+  const copy: Partial<T> = { ...item };
+  delete copy.body;
+  delete copy.file;
+  return copy as Omit<T, "body" | "file">;
+}
+
+/** A value that must be one of a fixed set (e.g. a news type). */
+function oneOf<T extends string>(file: RawFile, field: string, allowed: Record<T, unknown>): T {
+  const value = String(file.data[field]);
+  if (!(value in allowed)) {
+    throw new Error(`${file.file}: "${field}" is "${value}". Use one of: ${Object.keys(allowed).join(", ")}.`);
+  }
+  return value as T;
+}
+
+/** Unquoted YAML dates arrive as Date objects; normalise to "YYYY-MM-DD" and check the format. */
+function dateField(file: RawFile, field: string): string {
+  const raw = file.data[field];
+  const value = raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`${file.file}: "${field}" must be a date like 2026-10-29.`);
+  return value;
+}
+
+function unique<T extends { slug: string; file: string }>(items: T[], what: string): T[] {
+  const seen = new Set<string>();
+  for (const item of items) {
+    if (seen.has(item.slug)) throw new Error(`${item.file}: another ${what} already uses the name "${item.slug}".`);
+    seen.add(item.slug);
+  }
+  return items;
+}
 
 export const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -163,39 +236,66 @@ export function findGlossaryTerm(name: string): GlossaryTerm | undefined {
   );
 }
 
+/** All news items, newest first. */
 export function getNews(): NewsItem[] {
-  return readFolder("news", [".md"])
-    .map((f) => {
-      requireFields(f, ["title", "summary", "date"]);
-      // Unquoted YAML dates arrive as Date objects; normalise to "YYYY-MM-DD".
-      const date = f.data.date instanceof Date ? f.data.date.toISOString().slice(0, 10) : String(f.data.date);
-      return {
-        slug: f.slug,
-        title: String(f.data.title),
-        summary: String(f.data.summary),
-        date,
-        source: optional(f.data.source),
-        sourceUrl: optional(f.data.sourceUrl),
-        tags: list(f.data.tags),
-        body: f.body,
-      };
-    })
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const items = readFolder("news", [".md"]).map((f) => {
+    requireFields(f, ["title", "date", "source", "sourceUrl", "type", "summary", "whyItMatters"]);
+    return {
+      slug: f.slug.replace(/^\d{4}-\d{2}-\d{2}-/, ""),
+      title: String(f.data.title),
+      date: dateField(f, "date"),
+      source: String(f.data.source),
+      sourceUrl: String(f.data.sourceUrl),
+      type: oneOf(f, "type", NEWS_TYPES),
+      tags: list(f.data.tags),
+      summary: String(f.data.summary),
+      whyItMatters: String(f.data.whyItMatters),
+      relatedLesson: optional(f.data.relatedLesson),
+      relatedTool: optional(f.data.relatedTool),
+      featured: f.data.featured === true,
+      body: f.body,
+      file: f.file,
+    };
+  });
+  return unique(items, "news item").sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
 }
 
+export function getNewsItem(slug: string): NewsItem | undefined {
+  return getNews().find((n) => n.slug === slug);
+}
+
+/** All tools, by name. */
 export function getTools(): Tool[] {
-  return readFolder("tools", [".json"])
-    .map((f) => {
-      requireFields(f, ["name", "description", "url", "category"]);
-      return {
-        slug: f.slug,
-        name: String(f.data.name),
-        description: String(f.data.description),
-        url: String(f.data.url),
-        category: String(f.data.category),
-        pricing: f.data.pricing as Tool["pricing"],
-        tags: list(f.data.tags),
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const tools = readFolder("tools", [".md"]).map((f) => {
+    requireFields(f, ["name", "url", "category", "pricing", "platforms", "tagline", "goodFor", "difficulty", "dateAdded"]);
+    const platforms = list(f.data.platforms);
+    const unknown = platforms.filter((p) => !(p in PLATFORMS));
+    if (unknown.length) {
+      throw new Error(`${f.file}: unknown platform(s) ${unknown.join(", ")}. Use: ${Object.keys(PLATFORMS).join(", ")}.`);
+    }
+    return {
+      slug: f.slug,
+      name: String(f.data.name),
+      url: String(f.data.url),
+      category: oneOf(f, "category", TOOL_CATEGORIES),
+      pricing: oneOf(f, "pricing", PRICING),
+      openSource: f.data.openSource === true,
+      platforms: platforms as Platform[],
+      tagline: String(f.data.tagline),
+      goodFor: list(f.data.goodFor),
+      notGoodFor: list(f.data.notGoodFor),
+      difficulty: oneOf(f, "difficulty", DIFFICULTIES),
+      tags: list(f.data.tags),
+      featured: f.data.featured === true,
+      ownerNote: optional(f.data.ownerNote),
+      dateAdded: dateField(f, "dateAdded"),
+      body: f.body,
+      file: f.file,
+    };
+  });
+  return unique(tools, "tool").sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getTool(slug: string): Tool | undefined {
+  return getTools().find((t) => t.slug === slug);
 }

@@ -7,6 +7,7 @@ import { ArrowRight, Clock, Layers, Search, BookOpen } from "lucide-react";
 import { hueStyle, type Hue } from "@/lib/levels";
 import { duration, ease } from "@/lib/motion";
 import { ButtonLink } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { ProgressMeter } from "./ProgressMeter";
 import { useProgress } from "./progress";
 
@@ -192,17 +193,3 @@ function CourseCard({ course }: { course: CatalogueCourse }) {
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors ${
-        active ? "border-accent bg-accent text-accent-foreground" : "border-border text-muted hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}

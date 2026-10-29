@@ -8,6 +8,7 @@ import { Explainer } from "./blocks/Explainer";
 import { Quiz } from "./blocks/Quiz";
 import { Example, KeyPoint, TryIt } from "./blocks/Simple";
 import { Term } from "./blocks/Term";
+import { ToolCard } from "./blocks/ToolCard";
 
 /** Everything a lesson file can use. Plain Markdown is styled by lesson.css. */
 const components: MDXComponents = {
@@ -19,6 +20,7 @@ const components: MDXComponents = {
   Quiz,
   Explainer,
   Term,
+  ToolCard,
   // Headings get ids so the table of contents can link to them.
   h2: ({ children }) => <h2 id={slugify(textOf(children))}>{children}</h2>,
   h3: ({ children }) => <h3 id={slugify(textOf(children))}>{children}</h3>,

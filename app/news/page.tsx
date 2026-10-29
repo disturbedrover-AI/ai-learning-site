@@ -1,57 +1,61 @@
 import type { Metadata } from "next";
+import { Rss } from "lucide-react";
+import { NewsBrowser } from "@/components/news/NewsBrowser";
+import { NewsCard, type NewsSummary } from "@/components/news/NewsCard";
+import { Lift } from "@/components/motion/Lift";
+import { Reveal } from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
-import { Card, Tag } from "@/components/ui/Card";
+import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getNews } from "@/lib/content";
+import { withoutBody } from "@/lib/content";
+import { getCheckedNews } from "@/lib/related";
 
-export const metadata: Metadata = { title: "News" };
-
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(date),
-  );
+export const metadata: Metadata = {
+  title: "News",
+  alternates: { types: { "application/rss+xml": "/news/rss.xml" } },
+};
 
 export default function NewsPage() {
-  const news = getNews();
+  // Only what the cards need, so the full text isn't sent to the browser.
+  const items: NewsSummary[] = getCheckedNews().map(withoutBody);
+  const featured = items.filter((i) => i.featured);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
       <PageHeader
         eyebrow="News"
         title="What's new in AI"
-        description="Short, clear updates on what's happening and why it matters."
+        description="Short, clear updates on what's happening, with a line on why each one matters if you're just starting out."
       />
+      <Reveal className="-mt-6 mb-12">
+        <ButtonLink href="/news/rss.xml" variant="secondary" className="px-4 py-2">
+          <Rss className="size-4" aria-hidden /> RSS feed
+        </ButtonLink>
+      </Reveal>
 
-      <Stagger className="flex flex-col gap-4">
-        {news.map((item) => (
-          <StaggerItem key={item.slug}>
-            <Card>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                <time dateTime={item.date}>{formatDate(item.date)}</time>
-                {item.source && <span>· {item.source}</span>}
-              </div>
-              <h2 className="mt-2 text-lg font-semibold text-foreground">
-                {item.sourceUrl ? (
-                  <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
-                    {item.title}
-                  </a>
-                ) : (
-                  item.title
-                )}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{item.summary}</p>
-              {item.tags.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {item.tags.map((t) => (
-                    <Tag key={t}>{t}</Tag>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </StaggerItem>
-        ))}
-        {news.length === 0 && <p className="text-muted">No news yet.</p>}
-      </Stagger>
+      {featured.length > 0 && (
+        <section aria-labelledby="featured-news" className="mb-16">
+          <Reveal>
+            <h2 id="featured-news" className="text-2xl font-bold text-foreground">
+              Featured
+            </h2>
+          </Reveal>
+          <Stagger className="mt-5 grid gap-5 md:grid-cols-2">
+            {featured.map((item) => (
+              <StaggerItem key={item.slug}>
+                <Lift>
+                  <NewsCard item={item} large />
+                </Lift>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </section>
+      )}
+
+      <Reveal>
+        <h2 className="mb-5 text-2xl font-bold text-foreground">All news</h2>
+      </Reveal>
+      <NewsBrowser items={items} />
     </div>
   );
 }

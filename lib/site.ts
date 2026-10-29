@@ -2,6 +2,8 @@ export const site = {
   name: "AI Learning",
   description:
     "Learn artificial intelligence step by step: clear lessons, curated news, and useful tools.",
+  /** The site's public address, used for full links (e.g. in the RSS feed). Set NEXT_PUBLIC_SITE_URL when it goes live. */
+  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, ""),
 };
 
 export const navItems = [

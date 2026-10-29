@@ -146,6 +146,7 @@ Put a blank line before and after each block. Text inside a block can use Markdo
 | KeyPoint | The one takeaway to remember. | `<KeyPoint>…</KeyPoint>` |
 | Quiz | 2–4 multiple-choice questions with instant feedback. `answer` is the right option's position, counting from 1. `explanation` is optional. | see below |
 | Explainer | An interactive animation, by name (see `components/explainers/registry.ts`). | `<Explainer name="tokenization" />` |
+| ToolCard | A compact card for a tool from `tools/`, linking to its page. | `<ToolCard slug="ollama" />` |
 
 ```mdx
 <Quiz
@@ -181,22 +182,87 @@ The file name is the term's ID (used in links: `/learn/glossary#token`).
 
 ## news/ — Markdown (`.md`)
 
-| Field       | Required | Type                                        |
-| ----------- | -------- | ------------------------------------------- |
-| `title`     | yes      | text                                        |
-| `summary`   | yes      | text                                        |
-| `date`      | yes      | `"YYYY-MM-DD"` in quotes (newest shown first) |
-| `source`    | no       | name of the original source                 |
-| `sourceUrl` | no       | link to the original article                |
-| `tags`      | no       | list of text                                |
+One file per item, named `<yyyy-mm-dd>-<slug>.md`, e.g. `2024-07-23-llama-3-1.md`.
+The part after the date is its web address: `/news/llama-3-1`. Text below the
+`---` lines (optional) is shown on the item's own page; it can use lesson blocks.
 
-## tools/ — JSON (`.json`)
+```md
+---
+title: Meta releases Llama 3.1
+date: 2024-07-23
+source: Meta AI
+sourceUrl: https://ai.meta.com/blog/meta-llama-3-1/
+type: model
+tags: [open models, llama]
+summary: Two or three plain-English sentences on what happened.
+whyItMatters: One or two sentences for a beginner.
+relatedLesson: free-ai-toolkit
+relatedTool: ollama
+featured: true
+---
 
-| Field         | Required | Type                                  |
-| ------------- | -------- | ------------------------------------- |
-| `name`        | yes      | text                                  |
-| `description` | yes      | text                                  |
-| `url`         | yes      | full link, starting with `https://`   |
-| `category`    | yes      | text, e.g. `Chat assistant`           |
-| `pricing`     | no       | `free` / `freemium` / `paid`          |
-| `tags`        | no       | list of text                          |
+Optional longer text…
+```
+
+| Field           | Required | Type                                                                   |
+| --------------- | -------- | ---------------------------------------------------------------------- |
+| `title`         | yes      | text                                                                   |
+| `date`          | yes      | `YYYY-MM-DD` (newest shown first; grouped by month)                    |
+| `source`        | yes      | name of the original source                                            |
+| `sourceUrl`     | yes      | link to the original (opens in a new tab)                              |
+| `type`          | yes      | `model`, `tool`, `research`, `policy`, `tutorial` or `other`           |
+| `tags`          | no       | list of text (tag filter; also links news to tools with the same tag)  |
+| `summary`       | yes      | 2–3 sentences, plain English                                           |
+| `whyItMatters`  | yes      | 1–2 sentences for a beginner                                           |
+| `relatedLesson` | no       | a lesson slug                                                          |
+| `relatedTool`   | no       | a tool file name from `tools/`                                         |
+| `featured`      | no       | `true` shows it in the Featured strip                                  |
+
+The news also appears as an RSS feed at `/news/rss.xml`.
+
+## tools/ — Markdown (`.md`)
+
+One file per tool, named `<slug>.md` (its web address: `/tools/<slug>`). Text
+below the `---` lines (optional) is shown on the tool's page under "About".
+
+```md
+---
+name: Ollama
+url: https://ollama.com
+category: local-models
+pricing: free
+openSource: true
+platforms: [mac, windows, linux]
+tagline: One sentence on what it is.
+goodFor:
+  - First thing it's good for
+  - Second thing
+notGoodFor:
+  - Something it's not good for
+difficulty: beginner
+tags: [local models, privacy]
+featured: true
+ownerNote: Your personal take, shown as a quote.
+dateAdded: 2026-10-29
+---
+```
+
+| Field        | Required | Type                                                                                                      |
+| ------------ | -------- | --------------------------------------------------------------------------------------------------------- |
+| `name`       | yes      | text                                                                                                      |
+| `url`        | yes      | full link, starting with `https://`                                                                       |
+| `category`   | yes      | `chat`, `coding`, `images`, `audio-video`, `research`, `agents`, `local-models`, `learning`, `productivity`, `other` |
+| `pricing`    | yes      | `free`, `freemium` or `paid`                                                                              |
+| `openSource` | no       | `true` if the software itself is open source                                                              |
+| `platforms`  | yes      | list of `web`, `mac`, `windows`, `linux`, `mobile`                                                        |
+| `tagline`    | yes      | one sentence                                                                                              |
+| `goodFor`    | yes      | list of text                                                                                              |
+| `notGoodFor` | no       | list of text                                                                                              |
+| `difficulty` | yes      | `beginner`, `intermediate` or `advanced`                                                                  |
+| `tags`       | no       | list of text (shared tags link the tool to news items)                                                    |
+| `featured`   | no       | `true` shows it on the Home page (first three by name)                                                    |
+| `ownerNote`  | no       | your personal note, shown as a quote                                                                      |
+| `dateAdded`  | yes      | `YYYY-MM-DD` (for "Newest first" sorting)                                                                 |
+
+**Quoting:** if a value contains `: ` (a colon and a space) or starts with a quote,
+wrap the whole value in double quotes, e.g. `ownerNote: "Tip: start here."`

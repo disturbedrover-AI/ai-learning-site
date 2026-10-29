@@ -7,7 +7,11 @@ import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { ButtonLink } from "@/components/ui/Button";
 import { LessonIcon } from "@/components/learn/LessonIcon";
 import { ProgressMeter } from "@/components/learn/ProgressMeter";
+import { formatDate, TypeBadge } from "@/components/news/NewsCard";
+import { ToolLogo } from "@/components/tools/ToolParts";
+import { getTools } from "@/lib/content";
 import { courseStats, getCourses } from "@/lib/courses";
+import { getCheckedNews } from "@/lib/related";
 import { hueStyle } from "@/lib/levels";
 
 const sections = [
@@ -34,7 +38,11 @@ const sections = [
 export default function HomePage() {
   // Featured: published courses only, even when drafts are being previewed.
   const featured = getCourses({ drafts: false });
-  const [learn, ...others] = sections;
+  const [learn, news, tools] = sections;
+  const latestNews = getCheckedNews().slice(0, 3);
+  const featuredTools = getTools()
+    .filter((t) => t.featured)
+    .slice(0, 3);
 
   return (
     <>
@@ -153,28 +161,66 @@ export default function HomePage() {
             </div>
           </StaggerItem>
 
-          {others.map((s) => (
-            <StaggerItem key={s.href}>
-              <Lift>
-                <Link
-                  href={s.href}
-                  className="group block h-full rounded-3xl border border-border bg-surface p-6 transition-colors hover:border-accent"
-                >
-                  <s.icon className="size-5 text-accent" strokeWidth={1.75} aria-hidden />
-                  <h2 className="mt-4 flex items-center justify-between text-xl font-semibold text-foreground">
-                    {s.title}
-                    <ArrowRight
-                      className="size-4 text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent"
-                      aria-hidden
-                    />
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
-                </Link>
-              </Lift>
-            </StaggerItem>
-          ))}
+          <StaggerItem>
+            <SideCard section={news}>
+              <ul className="mt-4 space-y-3">
+                {latestNews.map((item) => (
+                  <li key={item.slug}>
+                    <Link href={`/news/${item.slug}`} className="group/item block">
+                      <span className="flex items-center gap-2 text-xs text-muted">
+                        <TypeBadge type={item.type} />
+                        {formatDate(item.date)}
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-sm leading-snug font-medium text-foreground transition-colors group-hover/item:text-accent">
+                        {item.title}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </SideCard>
+          </StaggerItem>
+
+          <StaggerItem>
+            <SideCard section={tools}>
+              <ul className="mt-4 space-y-3">
+                {featuredTools.map((tool) => (
+                  <li key={tool.slug}>
+                    <Link href={`/tools/${tool.slug}`} className="group/item flex items-center gap-3">
+                      <ToolLogo tool={tool} size="sm" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-foreground transition-colors group-hover/item:text-accent">
+                          {tool.name}
+                        </span>
+                        <span className="line-clamp-1 block text-xs text-muted">{tool.tagline}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </SideCard>
+          </StaggerItem>
         </Stagger>
       </section>
     </>
+  );
+}
+
+/** The smaller Home cards (News, Tools): a heading link, then a short list of items. */
+function SideCard({ section, children }: { section: (typeof sections)[number]; children: React.ReactNode }) {
+  return (
+    <div className="h-full rounded-3xl border border-border bg-surface p-6">
+      <section.icon className="size-5 text-accent" strokeWidth={1.75} aria-hidden />
+      <h2 className="mt-4 text-xl font-semibold text-foreground">
+        <Link href={section.href} className="group flex items-center justify-between">
+          {section.title}
+          <ArrowRight
+            className="size-4 text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent"
+            aria-hidden
+          />
+        </Link>
+      </h2>
+      {children}
+    </div>
   );
 }

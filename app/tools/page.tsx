@@ -1,52 +1,23 @@
 import type { Metadata } from "next";
-import { Lift } from "@/components/motion/Lift";
-import { Stagger, StaggerItem } from "@/components/motion/Stagger";
-import { Card, Tag } from "@/components/ui/Card";
+import { ToolsBrowser } from "@/components/tools/ToolsBrowser";
+import type { ToolSummary } from "@/components/tools/ToolParts";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { getTools } from "@/lib/content";
+import { getTools, withoutBody } from "@/lib/content";
 
 export const metadata: Metadata = { title: "Tools" };
 
 export default function ToolsPage() {
-  const tools = getTools();
+  // Only what the cards need, so the full text isn't sent to the browser.
+  const tools: ToolSummary[] = getTools().map(withoutBody);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
       <PageHeader
         eyebrow="Tools"
         title="AI tools worth knowing"
-        description="A hand-picked directory, with a short note on what each tool is good for."
+        description="A hand-picked directory with honest notes on what each tool is good for. Most are free, and many are open source."
       />
-
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {tools.map((tool) => (
-          <StaggerItem key={tool.slug}>
-            <Lift>
-              <a href={tool.url} target="_blank" rel="noopener noreferrer" className="group block h-full">
-                <Card className="group-hover:border-accent">
-                  <div className="flex items-center justify-between text-xs text-muted">
-                    <span>{tool.category}</span>
-                    {tool.pricing && <span className="capitalize">{tool.pricing}</span>}
-                  </div>
-                  <h2 className="mt-2 flex items-center gap-1.5 text-lg font-semibold text-foreground">
-                    {tool.name}
-                    <span className="text-muted transition-colors group-hover:text-accent">↗</span>
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{tool.description}</p>
-                  {tool.tags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {tool.tags.map((t) => (
-                        <Tag key={t}>{t}</Tag>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </a>
-            </Lift>
-          </StaggerItem>
-        ))}
-        {tools.length === 0 && <p className="text-muted">Tools are on their way.</p>}
-      </Stagger>
+      <ToolsBrowser tools={tools} />
     </div>
   );
 }
