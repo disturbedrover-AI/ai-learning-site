@@ -86,15 +86,22 @@ export function GlossaryBrowser({ terms }: { terms: GlossaryTerm[] }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: duration.base, ease }}
-              className="scroll-mt-24 rounded-2xl border border-border bg-surface p-5 transition-colors target:border-accent target:ring-4 target:ring-accent/10"
+              className="relative scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface p-6 transition-colors target:border-accent target:ring-4 target:ring-accent/10 sm:p-7"
             >
-              <dt className="text-lg font-semibold text-foreground">
+              {/* A large, faint first letter in the corner. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-1 -bottom-10 font-display text-[10rem] leading-none font-extrabold text-foreground/[0.05] select-none"
+              >
+                {t.term[0]}
+              </span>
+              <dt className="relative font-display text-2xl font-bold text-foreground">
                 {t.term}
                 {t.aliases.length > 0 && <span className="ml-2 text-sm font-normal text-muted">({t.aliases.join(", ")})</span>}
               </dt>
-              <dd className="mt-1.5 leading-relaxed text-muted">{t.definition}</dd>
+              <dd className="relative mt-2 max-w-[60ch] leading-relaxed text-muted">{t.definition}</dd>
               {t.related.length > 0 && (
-                <dd className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                <dd className="relative mt-4 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                   Related:
                   {t.related.map((slug) => (
                     <a
@@ -142,11 +149,17 @@ function LetterButton({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`h-8 min-w-8 rounded-full px-2 text-sm transition-colors disabled:cursor-default disabled:opacity-30 ${
-        active ? "bg-accent text-accent-foreground" : "text-muted enabled:hover:bg-surface enabled:hover:text-foreground"
+      // Letters that have terms are bold with a small dot; the rest are faint and can't be picked.
+      className={`relative h-9 min-w-9 rounded-full px-2 text-sm transition-colors disabled:cursor-default disabled:font-normal disabled:text-muted disabled:opacity-35 ${
+        active
+          ? "bg-accent font-semibold text-accent-foreground"
+          : "font-semibold text-foreground enabled:hover:bg-surface"
       }`}
     >
       {children}
+      {!disabled && !active && children !== "All" && (
+        <span aria-hidden className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-accent" />
+      )}
     </button>
   );
 }

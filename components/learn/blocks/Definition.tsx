@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { findGlossaryTerm } from "@/lib/content";
-import { Block, Icon } from "./Block";
+import { BookOpen } from "lucide-react";
+import { Block } from "./Block";
 
 /**
  * <Definition term="Token">A small piece of text…</Definition>
@@ -18,13 +19,13 @@ export function Definition({
 }) {
   const entry = findGlossaryTerm(glossary ?? term);
   return (
-    <Block label="Definition" icon={<Icon d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM20 17v4H6.5A2.5 2.5 0 0 1 4 18.5" />}>
-      <p className="text-lg font-semibold text-foreground">{term}</p>
+    <Block label="Definition" icon={BookOpen} hue={1} look="rule">
+      <p className="font-display text-2xl font-bold text-foreground">{term}</p>
       {children}
       {entry && (
         <Link
           href={`/learn/glossary#${entry.slug}`}
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-level hover:underline"
         >
           See “{entry.term}” in the glossary <span aria-hidden>→</span>
         </Link>

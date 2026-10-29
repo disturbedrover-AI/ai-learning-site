@@ -2,7 +2,10 @@
 
 import { useId, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { duration, ease, popover } from "@/lib/motion";
+import { Binary, Type } from "lucide-react";
+import { cascade, flip, pop, popover } from "@/lib/motion";
+import { levelStyle } from "@/lib/levels";
+import { Counter } from "@/components/motion/Counter";
 
 /*
  * A simplified tokenizer, for learning. Real tokenizers learn their pieces
@@ -56,24 +59,60 @@ function tokenId(token: string) {
   return (hash >>> 0) % 50000;
 }
 
-// Four tints of the theme's accent, so neighbouring tokens are easy to tell apart.
-const TINTS = ["bg-accent/10", "bg-accent/20", "bg-accent/5", "bg-accent/15"];
-
 const SAMPLES = [
   "Tokenization turns your words into numbers!",
   "I'm learning how language models read text.",
   "Unbelievably, 2026 chatbots predict one token at a time.",
 ];
 
+/** One token: a coloured chip that flips over to show its ID. */
+function Chip({ token, index, flipped, ripple }: { token: string; index: number; flipped: boolean; ripple: boolean }) {
+  const face =
+    "[grid-area:1/1] flex items-center justify-center rounded-lg border px-2 py-1 font-mono text-sm whitespace-pre [backface-visibility:hidden]";
+  return (
+    <motion.span
+      layout
+      initial={{ opacity: 0, y: 10, scale: 0.85 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.85, transition: popover }}
+      transition={{ ...pop, delay: ripple ? cascade(index) : 0 }}
+      // Chips cycle through the four level colours.
+      style={levelStyle(index)}
+      className="[perspective:600px]"
+    >
+      <motion.span
+        className="grid [transform-style:preserve-3d]"
+        initial={false}
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ ...flip, delay: cascade(index) }}
+      >
+        <span className={`${face} border-level/30 bg-level/12 text-foreground`}>
+          {token.startsWith(" ") && (
+            <span className="mr-0.5 text-level" aria-hidden>
+              ·
+            </span>
+          )}
+          {token.replace(/^ /, "").replace(/\n/g, "↵")}
+        </span>
+        <span className={`${face} border-level bg-level font-semibold text-background [transform:rotateY(180deg)]`}>
+          {tokenId(token)}
+        </span>
+      </motion.span>
+    </motion.span>
+  );
+}
+
 export default function Tokenization() {
   const inputId = useId();
   const [text, setText] = useState(SAMPLES[0]);
   const [showIds, setShowIds] = useState(false);
+  // Picking a sample ripples all chips in one after another; typing just adds the new ones.
+  const [ripple, setRipple] = useState(true);
   const tokens = tokenize(text);
 
   return (
     <div>
-      <p className="font-semibold text-foreground">Watch a sentence turn into tokens</p>
+      <p className="font-display text-xl font-bold text-foreground">Watch a sentence turn into tokens</p>
       <p className="mt-1 text-sm text-muted">Type anything below. Each coloured chip is one token.</p>
 
       <label htmlFor={inputId} className="sr-only">
@@ -84,8 +123,11 @@ export default function Tokenization() {
         value={text}
         maxLength={200}
         rows={2}
-        onChange={(e) => setText(e.target.value)}
-        className="mt-4 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-accent"
+        onChange={(e) => {
+          setRipple(false);
+          setText(e.target.value);
+        }}
+        className="mt-5 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-accent"
       />
 
       <div className="mt-2 flex flex-wrap gap-2">
@@ -93,7 +135,10 @@ export default function Tokenization() {
           <button
             key={sample}
             type="button"
-            onClick={() => setText(sample)}
+            onClick={() => {
+              setRipple(true);
+              setText(sample);
+            }}
             className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted transition-colors hover:border-accent hover:text-foreground"
           >
             {sample.length > 28 ? `${sample.slice(0, 26)}…` : sample}
@@ -104,47 +149,33 @@ export default function Tokenization() {
       <div
         aria-live="polite"
         aria-label={`${tokens.length} tokens`}
-        className="mt-5 flex min-h-24 flex-wrap content-start gap-1.5 rounded-xl border border-border bg-background p-3"
+        className="mt-5 flex min-h-28 flex-wrap content-start gap-1.5 rounded-2xl border border-border bg-background p-4"
       >
-        <AnimatePresence initial={false} mode="popLayout">
+        <AnimatePresence mode="popLayout">
           {tokens.map((token, i) => (
-            <motion.span
-              key={`${i}:${token}`}
-              layout
-              initial={{ opacity: 0, y: 8, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: duration.base, ease, delay: Math.min(i * 0.02, 0.3) }}
-              className={`inline-flex items-center rounded-lg border border-accent/20 px-2 py-1 font-mono text-sm whitespace-pre text-foreground ${TINTS[i % TINTS.length]}`}
-            >
-              {showIds ? (
-                tokenId(token)
-              ) : (
-                <>
-                  {token.startsWith(" ") && <span className="text-muted" aria-hidden>·</span>}
-                  {token.replace(/^ /, "").replace(/\n/g, "↵")}
-                </>
-              )}
-            </motion.span>
+            <Chip key={`${i}:${token}`} token={token} index={i} flipped={showIds} ripple={ripple} />
           ))}
         </AnimatePresence>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <p className="text-muted">
-          <strong className="text-foreground">{text.length}</strong> characters →{" "}
-          <motion.strong key={tokens.length} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }} transition={popover} className="text-foreground">
-            {tokens.length}
-          </motion.strong>{" "}
-          tokens
-        </p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-baseline gap-4 text-sm text-muted">
+          <p>
+            <Counter value={text.length} className="font-display text-2xl font-bold text-foreground" /> characters
+          </p>
+          <span aria-hidden>→</span>
+          <p>
+            <Counter value={tokens.length} className="font-display text-2xl font-bold text-foreground" /> tokens
+          </p>
+        </div>
         <button
           type="button"
           aria-pressed={showIds}
           onClick={() => setShowIds((v) => !v)}
-          className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-accent"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-accent"
         >
-          {showIds ? "Show as text" : "Show what the model sees (numbers)"}
+          {showIds ? <Type className="size-4" aria-hidden /> : <Binary className="size-4" aria-hidden />}
+          {showIds ? "Show as text" : "Show what the model sees"}
         </button>
       </div>
 

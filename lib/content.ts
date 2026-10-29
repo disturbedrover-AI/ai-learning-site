@@ -25,6 +25,8 @@ export type Lesson = {
   tags: string[];
   /** Slugs of lessons to read first. */
   prerequisites: string[];
+  /** A lucide.dev icon name, e.g. "brain-circuit". */
+  icon?: string;
   body: string;
   /** Where the lesson lives, for error messages. */
   file: string;
@@ -146,6 +148,7 @@ export function getLessons(): Lesson[] {
         duration: Number(f.data.duration),
         tags: list(f.data.tags),
         prerequisites: list(f.data.prerequisites),
+        icon: optional(f.data.icon),
         body: f.body,
         file: f.file,
       };

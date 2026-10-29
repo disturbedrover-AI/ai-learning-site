@@ -1,4 +1,5 @@
-import { Block, Icon } from "./Block";
+import { CircleQuestionMark } from "lucide-react";
+import { Block } from "./Block";
 import { QuizQuestions, type QuizQuestion } from "./QuizQuestions";
 
 /**
@@ -27,8 +28,8 @@ export function Quiz({ title = "Check your understanding", questions }: { title?
   });
 
   return (
-    <Block label="Quiz" icon={<Icon d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z" />}>
-      <p className="font-semibold text-foreground">{title}</p>
+    <Block label="Quiz" icon={CircleQuestionMark} hue={3} look="card">
+      <p className="font-display text-xl font-bold text-foreground">{title}</p>
       <QuizQuestions questions={questions} />
     </Block>
   );

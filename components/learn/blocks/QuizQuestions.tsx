@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { popover } from "@/lib/motion";
+import { Check, RotateCcw, X } from "lucide-react";
+import { popover, pulse, shake } from "@/lib/motion";
+import { Counter } from "@/components/motion/Counter";
 import { Button } from "@/components/ui/Button";
 
 export type QuizQuestion = {
@@ -13,55 +15,70 @@ export type QuizQuestion = {
   explanation?: string;
 };
 
-/** The interactive part of a Quiz: pick an option, get instant feedback. */
+/** The interactive part of a Quiz: pick an option, get instant feedback, see a score at the end. */
 export function QuizQuestions({ questions }: { questions: QuizQuestion[] }) {
   // The option picked for each question (0-based), or null if not answered yet.
   const [picked, setPicked] = useState<(number | null)[]>(() => questions.map(() => null));
 
+  const isRight = (p: number | null, i: number) => p === questions[i].answer - 1;
   const answered = picked.filter((p) => p !== null).length;
-  const correct = picked.filter((p, i) => p === questions[i].answer - 1).length;
+  const correct = picked.filter(isRight).length;
   const done = answered === questions.length;
 
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-6 space-y-8">
       {questions.map((q, qi) => {
         const choice = picked[qi];
         const right = q.answer - 1;
+        const gotIt = choice === right;
         return (
           <fieldset key={qi}>
             <legend className="font-medium text-foreground">
-              <span className="text-muted">{qi + 1}. </span>
+              <span className="mr-1 font-display font-bold text-level">{qi + 1}.</span>
               {q.question}
             </legend>
             <div className="mt-3 grid gap-2">
               {q.options.map((option, oi) => {
                 const isPicked = choice === oi;
-                const state =
-                  choice === null
-                    ? "border-border bg-background hover:border-accent"
-                    : oi === right
-                      ? "border-accent bg-accent/10 text-foreground"
-                      : isPicked
-                        ? "border-border bg-background text-muted line-through"
-                        : "border-border bg-background text-muted";
+                const isAnswered = choice !== null;
+                const state = !isAnswered
+                  ? "border-border bg-background hover:border-level/60"
+                  : oi === right
+                    ? "border-success bg-success/10 text-foreground"
+                    : isPicked
+                      ? "border-border bg-background text-muted line-through"
+                      : "border-border bg-background text-muted opacity-70";
                 return (
-                  <button
+                  <motion.button
                     key={oi}
                     type="button"
-                    disabled={choice !== null}
+                    disabled={isAnswered}
                     aria-pressed={isPicked}
                     onClick={() => setPicked((prev) => prev.map((p, i) => (i === qi ? oi : p)))}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-sm transition-colors disabled:cursor-default ${state}`}
+                    // Wrong pick: a gentle shake.
+                    animate={isAnswered && isPicked && !gotIt ? shake.animate : { x: 0 }}
+                    transition={shake.transition}
+                    className={`relative flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors disabled:cursor-default ${state}`}
                   >
+                    {/* Right pick: a soft green pulse. */}
+                    {isAnswered && gotIt && oi === right && (
+                      <motion.span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl border-2 border-success" {...pulse} />
+                    )}
                     <span
-                      className={`flex size-6 shrink-0 items-center justify-center rounded-full border text-xs ${
-                        choice !== null && oi === right ? "border-accent bg-accent text-accent-foreground" : "border-border"
+                      className={`flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
+                        isAnswered && oi === right ? "border-success bg-success text-background" : "border-border"
                       }`}
                     >
-                      {choice !== null && oi === right ? "✓" : choice !== null && isPicked ? "✕" : String.fromCharCode(65 + oi)}
+                      {isAnswered && oi === right ? (
+                        <Check className="size-3.5" strokeWidth={3} aria-label="Correct answer" />
+                      ) : isAnswered && isPicked ? (
+                        <X className="size-3.5" strokeWidth={3} aria-label="Your answer" />
+                      ) : (
+                        String.fromCharCode(65 + oi)
+                      )}
                     </span>
                     {option}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -75,7 +92,9 @@ export function QuizQuestions({ questions }: { questions: QuizQuestion[] }) {
                   role="status"
                 >
                   <span className="mt-3 block">
-                    <strong className="text-foreground">{choice === right ? "Correct. " : "Not quite. "}</strong>
+                    <strong className={gotIt ? "text-success" : "text-foreground"}>
+                      {gotIt ? "Correct. " : "Not quite. "}
+                    </strong>
                     {q.explanation}
                   </span>
                 </motion.p>
@@ -88,17 +107,27 @@ export function QuizQuestions({ questions }: { questions: QuizQuestion[] }) {
       <AnimatePresence>
         {done && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={popover}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3"
+            className="flex flex-wrap items-center gap-5 rounded-2xl border border-level/30 bg-background p-5"
           >
-            <p className="text-sm text-foreground">
-              You got <strong>{correct}</strong> of {questions.length} right.
-              {correct === questions.length ? " Nicely done." : " Have another look at the sections above."}
+            <p className="font-display text-4xl font-bold text-level" aria-label={`${correct} out of ${questions.length}`}>
+              <Counter value={correct} />
+              <span className="text-2xl text-muted">/{questions.length}</span>
             </p>
+            <div className="min-w-40 flex-1">
+              <div className="flex gap-1" aria-hidden>
+                {picked.map((p, i) => (
+                  <span key={i} className={`h-1.5 flex-1 rounded-full ${isRight(p, i) ? "bg-success" : "bg-border"}`} />
+                ))}
+              </div>
+              <p className="mt-2 text-sm text-foreground">
+                {correct === questions.length ? "Perfect score. Nicely done." : "Have another look at the sections above."}
+              </p>
+            </div>
             <Button variant="secondary" className="px-4 py-2" onClick={() => setPicked(questions.map(() => null))}>
-              Try again
+              <RotateCcw className="size-4" aria-hidden /> Try again
             </Button>
           </motion.div>
         )}

@@ -1,115 +1,134 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, BookA, Check, Clock, Wrench } from "lucide-react";
 import type { Lesson, Level } from "@/lib/content";
+import { levelStyle } from "@/lib/levels";
+import { Counter } from "@/components/motion/Counter";
 import { Lift } from "@/components/motion/Lift";
 import { Reveal } from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
-import { Tag } from "@/components/ui/Card";
+import { ButtonLink } from "@/components/ui/Button";
 import { useCompletedLessons } from "./progress";
 
-export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" | "tags">;
+export type PathLesson = Pick<Lesson, "slug" | "title" | "summary" | "duration" | "tags" | "level"> & {
+  /** The lesson's icon, already rendered on the server. */
+  icon: React.ReactNode;
+};
 export type PathLevel = Level & { lessons: PathLesson[] };
 
-/** The whole learning path: levels in order, each with numbered lesson steps joined by a line. */
-export function LearningPath({ levels }: { levels: PathLevel[] }) {
+/** Completion state shared by the path and its side panel. */
+function useProgress(levels: PathLevel[]) {
   const completed = useCompletedLessons();
   const all = levels.flatMap((l) => l.lessons);
-  const doneCount = all.filter((l) => completed.includes(l.slug)).length;
-  const nextUp = all.find((l) => !completed.includes(l.slug))?.slug;
-  // Steps are numbered across the whole path, not per level.
+  const isDone = (slug: string) => completed.includes(slug);
+  return {
+    all,
+    isDone,
+    doneCount: all.filter((l) => isDone(l.slug)).length,
+    nextUp: all.find((l) => !isDone(l.slug)),
+  };
+}
+
+/** The learning path: levels in order, each with lesson steps joined by a line that fills as lessons are completed. */
+export function LearningPath({ levels }: { levels: PathLevel[] }) {
+  const { all, isDone, nextUp } = useProgress(levels);
   const stepOf = (slug: string) => all.findIndex((l) => l.slug === slug) + 1;
 
   return (
-    <div>
-      <Reveal className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-          <p className="font-medium text-foreground">Your progress</p>
-          <p className="text-muted">
-            {doneCount} of {all.length} lessons complete
-          </p>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background">
-          <div
-            className="h-full origin-left rounded-full bg-accent transition-transform duration-500 ease-out"
-            style={{ transform: `scaleX(${all.length ? doneCount / all.length : 0})` }}
-          />
-        </div>
-        <p className="mt-3 text-xs text-muted">Saved in this browser only. Accounts are coming later.</p>
-      </Reveal>
-
-      <div className="mt-12 space-y-14">
-        {levels.map((level) => (
-          <section key={level.level} aria-labelledby={`level-${level.level}`}>
+    <div className="space-y-20">
+      {levels.map((level) => {
+        const minutes = level.lessons.reduce((sum, l) => sum + l.duration, 0);
+        const empty = level.lessons.length === 0;
+        return (
+          <section key={level.level} aria-labelledby={`level-${level.level}`} style={levelStyle(level.level)}>
             <Reveal>
-              <p className="text-sm font-medium text-accent">Level {level.level}</p>
-              <h2 id={`level-${level.level}`} className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-                {level.title}
-              </h2>
-              <p className="mt-2 max-w-2xl text-muted">{level.description}</p>
+              <div className="flex items-end gap-5">
+                <span
+                  aria-hidden
+                  className={`font-display text-8xl leading-[0.8] font-extrabold sm:text-9xl ${
+                    empty ? "text-transparent opacity-60 [-webkit-text-stroke:1.5px_var(--level)]" : "text-level"
+                  }`}
+                >
+                  {level.level}
+                </span>
+                <div className="pb-1">
+                  <p className="text-xs font-semibold tracking-[0.14em] text-level uppercase">Level {level.level}</p>
+                  <h2 id={`level-${level.level}`} className="mt-1 text-3xl font-bold text-foreground sm:text-4xl">
+                    {level.title}
+                  </h2>
+                </div>
+              </div>
+              <p className="mt-5 max-w-xl leading-relaxed text-muted">{level.description}</p>
+              <p className="mt-2 text-sm font-medium text-foreground">
+                {empty
+                  ? "Coming soon"
+                  : `${level.lessons.length} ${level.lessons.length === 1 ? "lesson" : "lessons"} · ${minutes} min`}
+              </p>
             </Reveal>
 
-            {level.lessons.length === 0 ? (
-              <Reveal className="mt-6 rounded-2xl border border-dashed border-border px-5 py-6 text-sm text-muted">
-                Lessons for this level are coming soon.
-              </Reveal>
-            ) : (
-              <Stagger as="ol" className="mt-6">
+            {!empty && (
+              <Stagger as="ol" className="mt-8">
                 {level.lessons.map((lesson, i) => {
-                  const done = completed.includes(lesson.slug);
-                  const isNext = lesson.slug === nextUp;
+                  const done = isDone(lesson.slug);
+                  const isNext = lesson.slug === nextUp?.slug;
                   const last = i === level.lessons.length - 1;
                   return (
-                    <StaggerItem as="li" key={lesson.slug} className="relative flex gap-4 pb-4 sm:gap-6">
-                      {/* The line joining this step to the next one. */}
+                    <StaggerItem as="li" key={lesson.slug} className="relative flex gap-4 pb-5 sm:gap-6">
+                      {/* The line to the next step: grey, filling with the level colour once this lesson is done. */}
                       {!last && (
                         <span
                           aria-hidden
-                          className={`absolute top-10 bottom-0 left-[1.125rem] w-px ${done ? "bg-accent" : "bg-border"}`}
-                        />
+                          className="absolute top-12 bottom-0 left-[1.1875rem] w-0.5 overflow-hidden rounded-full bg-border"
+                        >
+                          <span
+                            className={`block size-full origin-top bg-level transition-transform duration-500 ease-out ${
+                              done ? "scale-y-100" : "scale-y-0"
+                            }`}
+                          />
+                        </span>
                       )}
                       <span
-                        className={`relative z-10 mt-1 flex size-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
+                        className={`relative z-10 mt-2 flex size-10 shrink-0 items-center justify-center rounded-full border-2 font-display text-sm font-bold transition-colors ${
                           done
-                            ? "border-accent bg-accent text-accent-foreground"
+                            ? "border-level bg-level text-background"
                             : isNext
-                              ? "border-accent bg-background text-accent ring-4 ring-accent/15"
+                              ? "border-level bg-background text-level ring-4 ring-level/15"
                               : "border-border bg-background text-muted"
                         }`}
                       >
-                        {done ? (
-                          <svg viewBox="0 0 20 20" className="size-4" fill="currentColor" aria-label="Completed">
-                            <path d="M7.7 13.3 4.4 10l-1.1 1.1 4.4 4.4 9-9-1.1-1.1z" />
-                          </svg>
-                        ) : (
-                          stepOf(lesson.slug)
-                        )}
+                        {done ? <Check className="size-4" strokeWidth={3} aria-label="Completed" /> : stepOf(lesson.slug)}
                       </span>
 
                       <Lift className="min-w-0 flex-1">
                         <Link
                           href={`/learn/${lesson.slug}`}
-                          className="group block rounded-2xl border border-border bg-surface p-5 transition-colors hover:border-accent"
+                          className={`group flex gap-4 rounded-2xl border bg-surface p-5 transition-[border-color,box-shadow,opacity] hover:border-level/60 hover:ring-4 hover:ring-level/10 sm:p-6 ${
+                            isNext ? "border-level/40" : "border-border"
+                          } ${done ? "opacity-70 hover:opacity-100" : ""}`}
                         >
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                            <span>{lesson.duration} min read</span>
-                            {done && <span className="font-medium text-accent">· Done</span>}
-                            {isNext && <span className="font-medium text-accent">· Up next</span>}
-                          </div>
-                          <h3 className="mt-1.5 flex items-center justify-between gap-3 text-lg font-semibold text-foreground">
-                            {lesson.title}
-                            <span className="text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent">
-                              →
+                          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-level/10 text-level [&_svg]:size-5">
+                            {lesson.icon}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="size-3.5" aria-hidden /> {lesson.duration} min
+                              </span>
+                              {done && <span className="font-semibold text-level">· Completed</span>}
+                              {isNext && (
+                                <span className="rounded-full bg-level/10 px-2 py-0.5 font-semibold text-level">Up next</span>
+                              )}
                             </span>
-                          </h3>
-                          <p className="mt-1.5 text-sm leading-relaxed text-muted">{lesson.summary}</p>
-                          {lesson.tags.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {lesson.tags.map((t) => (
-                                <Tag key={t}>{t}</Tag>
-                              ))}
-                            </div>
-                          )}
+                            <span className="mt-1.5 flex items-center justify-between gap-3 font-display text-xl font-bold text-foreground">
+                              {lesson.title}
+                              <ArrowRight
+                                className="size-5 shrink-0 text-muted transition-transform group-hover:translate-x-1 group-hover:text-level"
+                                aria-hidden
+                              />
+                            </span>
+                            <span className="mt-1.5 block text-sm leading-relaxed text-muted">{lesson.summary}</span>
+                          </span>
                         </Link>
                       </Lift>
                     </StaggerItem>
@@ -118,8 +137,99 @@ export function LearningPath({ levels }: { levels: PathLevel[] }) {
               </Stagger>
             )}
           </section>
-        ))}
-      </div>
+        );
+      })}
     </div>
+  );
+}
+
+/** The Learn page's side panel: progress, "continue where you left off", quick links. */
+export function LearnPanel({ levels }: { levels: PathLevel[] }) {
+  const { all, isDone, doneCount, nextUp } = useProgress(levels);
+  const percent = all.length ? Math.round((doneCount / all.length) * 100) : 0;
+
+  return (
+    <Stagger className="space-y-4">
+      <StaggerItem className="rounded-3xl border border-border bg-surface p-6">
+        <p className="text-sm font-medium text-muted">Your progress</p>
+        <p className="mt-2 flex items-baseline gap-1 font-display text-5xl font-bold text-foreground">
+          <Counter value={percent} />
+          <span className="text-2xl text-muted">%</span>
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {doneCount} of {all.length} lessons complete
+        </p>
+        {/* One segment per lesson, in its level's colour. */}
+        <div className="mt-5 flex gap-1" aria-hidden>
+          {all.map((lesson) => (
+            <span
+              key={lesson.slug}
+              style={levelStyle(lesson.level)}
+              className="h-2 flex-1 overflow-hidden rounded-full bg-level/15"
+            >
+              <span
+                className={`block size-full origin-left rounded-full bg-level transition-transform duration-500 ease-out ${
+                  isDone(lesson.slug) ? "scale-x-100" : "scale-x-0"
+                }`}
+              />
+            </span>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-muted">Saved in this browser only. Accounts are coming later.</p>
+      </StaggerItem>
+
+      <StaggerItem>
+        <div
+          className="rounded-3xl border border-border bg-surface p-6"
+          style={nextUp ? levelStyle(nextUp.level) : undefined}
+        >
+          {nextUp ? (
+            <>
+              <p className="text-sm font-medium text-muted">
+                {doneCount ? "Continue where you left off" : "Start here"}
+              </p>
+              <div className="mt-4 flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-level/10 text-level [&_svg]:size-5">
+                  {nextUp.icon}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-level">
+                    Level {nextUp.level} · {nextUp.duration} min
+                  </p>
+                  <p className="mt-0.5 font-display text-lg leading-snug font-bold text-foreground">{nextUp.title}</p>
+                </div>
+              </div>
+              <ButtonLink href={`/learn/${nextUp.slug}`} className="mt-5 w-full">
+                {doneCount ? "Continue" : "Start the first lesson"} <ArrowRight className="size-4" aria-hidden />
+              </ButtonLink>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-lg font-bold text-foreground">All caught up</p>
+              <p className="mt-1 text-sm text-muted">You&apos;ve completed every lesson so far. New ones are on the way.</p>
+            </>
+          )}
+        </div>
+      </StaggerItem>
+
+      <StaggerItem className="grid grid-cols-2 gap-3">
+        <QuickLink href="/learn/glossary" icon={<BookA className="size-5" aria-hidden />} label="Glossary" />
+        <QuickLink href="/tools" icon={<Wrench className="size-5" aria-hidden />} label="Tools" />
+      </StaggerItem>
+    </Stagger>
+  );
+}
+
+function QuickLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Lift>
+      <Link
+        href={href}
+        className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-4 text-sm font-semibold text-foreground transition-colors hover:border-accent"
+      >
+        <span className="text-accent">{icon}</span>
+        {label}
+      </Link>
+    </Lift>
   );
 }

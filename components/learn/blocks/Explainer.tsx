@@ -1,5 +1,6 @@
 import { explainers } from "@/components/explainers/registry";
-import { Block, Icon } from "./Block";
+import { MousePointerClick } from "lucide-react";
+import { Block } from "./Block";
 
 /** <Explainer name="tokenization" /> shows the matching component from components/explainers/registry.ts. */
 export async function Explainer({ name }: { name: string }) {
@@ -11,7 +12,7 @@ export async function Explainer({ name }: { name: string }) {
   }
   const { default: Component } = await load();
   return (
-    <Block label="Interactive" icon={<Icon d="M5 3l14 9-14 9V3z" />}>
+    <Block label="Interactive" icon={MousePointerClick} hue="accent" look="grid">
       <Component />
     </Block>
   );

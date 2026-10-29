@@ -27,6 +27,7 @@ duration: 9
 summary: One or two sentences shown on the learning path.
 tags: [basics, introduction]
 prerequisites: []
+icon: sparkles
 ---
 
 ## First section
@@ -44,6 +45,7 @@ Plain Markdown text…
 | `summary`       | yes      | text (one or two sentences)                               | `A plain-English intro` |
 | `tags`          | no       | list of text                                              | `[basics, history]`     |
 | `prerequisites` | no       | list of other lessons' slugs to read first                | `[what-is-ai]`          |
+| `icon`          | no       | an icon name from lucide.dev/icons                        | `brain-circuit`         |
 | `draft`         | no       | `true` hides the lesson from the site                     | `false`                 |
 
 ### Levels — `lessons/_levels.json`

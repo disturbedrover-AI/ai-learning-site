@@ -10,7 +10,11 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  /* The current level's colour (set per element via lib/levels.ts): text-level, bg-level/10, … */
+  --color-level: var(--level);
   --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -27,6 +31,8 @@ h1,
 h2,
 h3 {
   font-family: var(--font-heading), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 ::selection {

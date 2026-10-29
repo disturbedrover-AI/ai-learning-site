@@ -8,7 +8,7 @@
  * Rules: subtle and fast (0.2–0.5s), no parallax, no 3D, no page transitions.
  * "Reduce motion" is handled globally in components/theme/ThemeProvider.tsx.
  */
-import type { Transition, Variants } from "framer-motion";
+import type { TargetAndTransition, Transition, Variants } from "framer-motion";
 
 /** Durations in seconds. Nothing on the site should be slower than `slow`. */
 export const duration = { fast: 0.2, base: 0.3, slow: 0.45 } as const;
@@ -52,6 +52,38 @@ export const slide: Transition = { type: "spring", bounce: 0, duration: duration
 
 /** Opening and closing small panels (menus, dropdowns, answers). */
 export const popover: Transition = { duration: duration.fast, ease: "easeOut" };
+
+/** Number counters (token count, quiz score, reading %). */
+export const count: Transition = { duration: duration.slow, ease };
+
+/** Wrong answer: a small side-to-side shake. */
+export const shake: { animate: TargetAndTransition; transition: Transition } = {
+  animate: { x: [0, -6, 6, -4, 4, 0] },
+  transition: { duration: duration.slow, ease: "easeInOut" },
+};
+
+/** Right answer: a soft ring that grows and fades. Use on an absolutely placed outline. */
+export const pulse: { initial: TargetAndTransition; animate: TargetAndTransition; transition: Transition } = {
+  initial: { opacity: 0.7, scale: 1 },
+  animate: { opacity: 0, scale: 1.04 },
+  transition: { duration: duration.slow, ease },
+};
+
+/** Card flip (the only 3D motion on the site: tokenizer chips). Combine with `cascade` for a ripple. */
+export const flip: Transition = { duration: duration.slow, ease };
+
+/** A small, slightly springy pop for chips appearing. */
+export const pop: Transition = { type: "spring", bounce: 0.35, duration: duration.base };
+
+/** Delay for item `i` in a ripple (chips appearing or flipping one after another), capped so long lists stay quick. */
+export const cascade = (i: number) => Math.min(i * 0.035, 0.5);
+
+/**
+ * Ambient background motion (the constellation motif). The one exception to
+ * the 0.2–0.5s rule: very slow, continuous, and only for decoration.
+ * `cycle` is the seconds for one full drift; `distance` is how far nodes wander (in SVG units).
+ */
+export const ambient = { cycle: 18, distance: 2.2 } as const;
 
 /**
  * Cross-fades the whole page while `update` changes the theme.

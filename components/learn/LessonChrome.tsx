@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useScroll } from "framer-motion";
+import Link from "next/link";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import type { Heading } from "@/lib/headings";
 import { hoverLift, popover } from "@/lib/motion";
 import { setLessonComplete, useCompletedLessons } from "./progress";
@@ -13,7 +15,7 @@ export function ReadingProgress() {
     <motion.div
       aria-hidden
       style={{ scaleX: scrollYProgress }}
-      className="fixed inset-x-0 top-16 z-30 h-0.5 origin-left bg-accent"
+      className="fixed inset-x-0 top-16 z-30 h-0.5 origin-left bg-level"
     />
   );
 }
@@ -46,7 +48,7 @@ export function TableOfContents({ headings }: { headings: Heading[] }) {
         {headings.map((h) => (
           <li key={h.id} className="relative">
             {active === h.id && (
-              <motion.span layoutId="toc-active" className="absolute inset-y-0 -left-px w-0.5 bg-accent" transition={popover} />
+              <motion.span layoutId="toc-active" className="absolute inset-y-0 -left-px w-0.5 bg-level" transition={popover} />
             )}
             <a
               href={`#${h.id}`}
@@ -72,8 +74,8 @@ export function CompleteButton({ slug }: { slug: string }) {
       onClick={() => setLessonComplete(slug, !done)}
       aria-pressed={done}
       {...hoverLift}
-      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-colors ${
-        done ? "border border-accent bg-accent/10 text-foreground" : "bg-accent text-accent-foreground hover:opacity-90"
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-colors ${
+        done ? "border border-level bg-level/10 text-foreground" : "bg-accent text-accent-foreground hover:opacity-90"
       }`}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -87,9 +89,7 @@ export function CompleteButton({ slug }: { slug: string }) {
         >
           {done ? (
             <>
-              <svg viewBox="0 0 20 20" className="size-4 text-accent" fill="currentColor" aria-hidden>
-                <path d="M7.7 13.3 4.4 10l-1.1 1.1 4.4 4.4 9-9-1.1-1.1z" />
-              </svg>
+              <Check className="size-4 text-level" strokeWidth={3} aria-hidden />
               Completed · Undo
             </>
           ) : (
@@ -98,5 +98,80 @@ export function CompleteButton({ slug }: { slug: string }) {
         </motion.span>
       </AnimatePresence>
     </motion.button>
+  );
+}
+
+type Neighbour = { slug: string; title: string } | undefined;
+
+/** A ring that fills as you read, with the percentage in the middle. */
+function ReadingRing() {
+  const { scrollYProgress } = useScroll();
+  const percent = useTransform(scrollYProgress, (p) => `${Math.round(p * 100)}%`);
+  return (
+    <div className="relative size-20">
+      <svg viewBox="0 0 40 40" className="size-full -rotate-90" aria-hidden>
+        <circle cx="20" cy="20" r="17" fill="none" stroke="var(--border)" strokeWidth="3" />
+        <motion.circle
+          cx="20"
+          cy="20"
+          r="17"
+          fill="none"
+          stroke="var(--level)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          style={{ pathLength: scrollYProgress }}
+        />
+      </svg>
+      <motion.span className="absolute inset-0 flex items-center justify-center font-display text-lg font-bold text-foreground tabular-nums">
+        {percent}
+      </motion.span>
+    </div>
+  );
+}
+
+/**
+ * The lesson's side panel: reading progress, "Mark as complete", and the
+ * previous / next lessons. On small screens it sits below the lesson.
+ */
+export function LessonPanel({ slug, prev, next }: { slug: string; prev: Neighbour; next: Neighbour }) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-3xl border border-border bg-surface p-5">
+        <div className="flex items-center gap-4">
+          <ReadingRing />
+          <div>
+            <p className="text-sm font-medium text-foreground">Reading progress</p>
+            <p className="mt-0.5 text-xs text-muted">How far through this lesson you are.</p>
+          </div>
+        </div>
+        <div className="mt-5">
+          <CompleteButton slug={slug} />
+        </div>
+      </div>
+
+      <nav aria-label="More lessons" className="grid gap-3">
+        {prev && <NeighbourLink lesson={prev} direction="prev" />}
+        {next && <NeighbourLink lesson={next} direction="next" />}
+      </nav>
+    </div>
+  );
+}
+
+function NeighbourLink({ lesson, direction }: { lesson: NonNullable<Neighbour>; direction: "prev" | "next" }) {
+  const Arrow = direction === "prev" ? ArrowLeft : ArrowRight;
+  return (
+    <motion.div {...hoverLift}>
+      <Link
+        href={`/learn/${lesson.slug}`}
+        className="group block rounded-2xl border border-border p-4 transition-colors hover:border-level/60"
+      >
+        <span className="flex items-center gap-1 text-xs text-muted">
+          {direction === "prev" && <Arrow className="size-3.5" aria-hidden />}
+          {direction === "prev" ? "Previous" : "Next"}
+          {direction === "next" && <Arrow className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />}
+        </span>
+        <span className="mt-1 block text-sm font-semibold text-foreground group-hover:text-level">{lesson.title}</span>
+      </Link>
+    </motion.div>
   );
 }
