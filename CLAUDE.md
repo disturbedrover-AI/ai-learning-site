@@ -309,9 +309,10 @@ curated Posts. It's handled by `lib/radar.ts`:
 **Remove a source**: set `"enabled": false` (keeps it for later), or delete its entry.
 
 Current sources: OpenAI, Google DeepMind, Hugging Face, Engineering at Meta (AI research),
-Hacker News front page (AI keywords only), and arXiv cs.AI + cs.LG (newest 10). Anthropic
-publishes no official feed: a community-made copy is listed but disabled; Meta's
-ai.meta.com blog has no feed either, so its official engineering feed is used.
+Anthropic, Hacker News front page (AI keywords only), and arXiv cs.AI + cs.LG (newest 10).
+Anthropic publishes no official feed, so its entry uses a community-made copy of
+anthropic.com/news (github.com/Olshansk/rss-feeds); if that copy stops updating, disable it.
+Meta's ai.meta.com blog has no feed either, so its official engineering feed is used.
 
 **"Make this a post"** appears on each Radar item when `canDraftPosts()` in
 `lib/auth/permissions.ts` says so: today, only when `SHOW_DRAFTS=true`. It opens a dialog

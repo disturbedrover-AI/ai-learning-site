@@ -37,9 +37,9 @@
     "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml",
     "homepage": "https://www.anthropic.com/news",
     "category": "official",
-    "enabled": false,
+    "enabled": true,
     "limit": 15,
-    "note": "Anthropic doesn't publish an official feed. This is a community-made copy of anthropic.com/news (github.com/Olshansk/rss-feeds); set enabled to true to use it."
+    "note": "Anthropic doesn't publish an official feed. This is a community-made copy of anthropic.com/news (github.com/Olshansk/rss-feeds). Set enabled to false to turn it off."
   },
   {
     "name": "Hacker News",
