@@ -3,15 +3,35 @@
   "description": "Start from nothing and build a clear, practical understanding of AI: what it is, how language models work, and how to run one yourself.",
   "icon": "sparkles",
   "accent": "teal",
-  "tags": ["beginner", "fundamentals"],
+  "tags": [
+    "beginner",
+    "fundamentals"
+  ],
   "status": "published",
   "levels": [
     {
       "level": 0,
-      "lessons": ["what-is-ai", "how-language-models-work", "free-ai-toolkit"]
+      "description": "What AI is, how it works under the hood, and how to get set up. No experience needed.",
+      "lessons": [
+        "what-is-ai",
+        "how-language-models-work",
+        "free-ai-toolkit"
+      ]
     },
-    { "level": 1, "lessons": [] },
-    { "level": 2, "lessons": [] },
-    { "level": 3, "lessons": [] }
+    {
+      "level": 1,
+      "description": "The key ideas behind modern AI: training, prompts, context and how models are measured.",
+      "lessons": []
+    },
+    {
+      "level": 2,
+      "description": "Use AI tools for real tasks, run models on your own computer and compare the results.",
+      "lessons": []
+    },
+    {
+      "level": 3,
+      "description": "Put it together: small projects that use AI to solve problems you care about.",
+      "lessons": []
+    }
   ]
 }
