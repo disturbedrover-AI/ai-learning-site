@@ -4,7 +4,8 @@
  * Automatic headlines from the feeds in content/news-sources.json, shown
  * alongside the curated news posts. Server-side only.
  *
- * - Every enabled source is fetched in parallel, each with a 5-second limit.
+ * - Every enabled source is fetched in parallel, each with a 5-second limit
+ *   (a source can allow more with "timeout").
  * - Feeds that fail or don't parse are skipped (and logged); the rest still show.
  * - Only the title, a short snippet (max 200 characters, no HTML) and the link
  *   are kept. Full article text is never stored or shown.
@@ -31,6 +32,8 @@ export type RadarSource = {
   keywords?: string[];
   /** false: don't show the feed's text (for feeds whose text is just boilerplate). */
   snippets: boolean;
+  /** Seconds to wait for this feed (default 5). */
+  timeout: number;
 };
 
 export type RadarItem = {
@@ -52,7 +55,7 @@ export type Radar = {
   sources: { name: string; homepage: string; category: RadarCategory; ok: boolean; count: number }[];
 };
 
-const TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_SECONDS = 5;
 const SNIPPET_LENGTH = 200;
 
 /** The sources listed in content/news-sources.json (checked). */
@@ -79,6 +82,7 @@ export function getRadarSources(): RadarSource[] {
       limit: typeof s.limit === "number" ? s.limit : undefined,
       keywords: Array.isArray(s.keywords) ? s.keywords.map(String) : undefined,
       snippets: s.snippets !== false,
+      timeout: typeof s.timeout === "number" && s.timeout > 0 ? s.timeout : DEFAULT_TIMEOUT_SECONDS,
     };
   });
 }
@@ -116,7 +120,7 @@ const parser = new Parser();
 
 async function fetchSource(source: RadarSource): Promise<RadarItem[]> {
   const response = await fetch(source.url, {
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(source.timeout * 1000),
     headers: {
       "User-Agent": `${site.name} Radar (+${site.url})`,
       Accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8",

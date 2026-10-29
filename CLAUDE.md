@@ -278,7 +278,8 @@ links in the RSS feed are correct.
 
 The Radar tab on /news shows automatic headlines from AI blogs and feeds, next to the
 curated Posts. It's handled by `lib/radar.ts`:
-- All enabled sources are fetched in parallel on the server, 5 seconds each at most.
+- All enabled sources are fetched in parallel on the server, 5 seconds each at most
+  (a source can allow more with `timeout`).
   A source that fails or doesn't parse is skipped and logged (`[radar] Skipped …` in the
   terminal); the others still show. If every source fails, the tab says so and Posts work as usual.
 - Items are cleaned up to title, link, source, date, category and a snippet of at most
@@ -303,7 +304,8 @@ curated Posts. It's handled by `lib/radar.ts`:
 - `category`: `official` (company and lab blogs), `community`, or `research` (papers).
 - Optional: `limit` (keep only the newest N), `keywords` (keep only items whose title or
   snippet contains one of the words; used for Hacker News), `snippets: false` (hide feed
-  text that's only boilerplate), `note` (a reminder for you; not shown on the site).
+  text that's only boilerplate), `timeout` (seconds to wait, default 5; Hacker News has 10),
+  `note` (a reminder for you; not shown on the site).
 - Changes show within the hour, or straight away after restarting `npm run dev` or rebuilding.
 
 **Remove a source**: set `"enabled": false` (keeps it for later), or delete its entry.

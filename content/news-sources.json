@@ -65,7 +65,8 @@
       "Hugging Face"
     ],
     "snippets": false,
-    "note": "Front page only, filtered to AI-related titles. Its feed text is just links and points, so no snippet is shown."
+    "note": "Front page only, filtered to AI-related titles. Its feed text is just links and points, so no snippet is shown. Its feed can be slow, so it gets 10 seconds instead of 5.",
+    "timeout": 10
   },
   {
     "name": "arXiv (cs.AI, cs.LG)",
