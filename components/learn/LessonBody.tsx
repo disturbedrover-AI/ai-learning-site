@@ -9,6 +9,7 @@ import { Quiz } from "./blocks/Quiz";
 import { Example, KeyPoint, TryIt } from "./blocks/Simple";
 import { Term } from "./blocks/Term";
 import { ToolCard } from "./blocks/ToolCard";
+import { remarkSafeMdx } from "./safeMdx";
 
 /** Everything a lesson file can use. Plain Markdown is styled by lesson.css. */
 const components: MDXComponents = {
@@ -35,13 +36,26 @@ const components: MDXComponents = {
     ),
 };
 
-/** Turns a lesson's MDX text into the page content. */
-export async function LessonBody({ source, file }: { source: string; file: string }) {
+/**
+ * Turns MDX text into page content.
+ * - Files (lessons, news, tools): a mistake stops the build with a message naming the file.
+ * - `safe` (text stored in the database, e.g. Lab entries): only Markdown and lesson
+ *   blocks with plain values are allowed (see safeMdx.ts), and a mistake shows a
+ *   notice in place of the text instead of breaking the page.
+ */
+export async function LessonBody({ source, file, safe = false }: { source: string; file: string; safe?: boolean }) {
   let Content;
   try {
-    ({ default: Content } = await evaluate(source, runtime));
+    ({ default: Content } = await evaluate(source, { ...runtime, remarkPlugins: safe ? [remarkSafeMdx] : [] }));
   } catch (error) {
-    throw new Error(`${file} couldn't be read: ${(error as Error).message}`);
+    const message = (error as Error).message.replace(/^\d+:\d+(-\d+:\d+)?: /, "");
+    if (!safe) throw new Error(`${file} couldn't be read: ${message}`);
+    return (
+      <div role="alert" className="rounded-2xl border border-dashed border-border bg-surface px-5 py-4 text-sm text-foreground">
+        <p className="font-semibold">This text has a formatting problem</p>
+        <p className="mt-1 text-muted">{message}</p>
+      </div>
+    );
   }
   return <Content components={components} />;
 }

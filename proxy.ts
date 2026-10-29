@@ -4,11 +4,19 @@ import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supaba
 
 /**
  * Runs before each page request: keeps the visitor's Supabase sign-in fresh by
- * refreshing its cookies. It doesn't block or redirect anything.
+ * refreshing its cookies, and marks private pages as not for search engines.
+ * It doesn't block or redirect anything (pages check access themselves).
  */
 export async function proxy(request: NextRequest) {
-  if (!isSupabaseConfigured) return NextResponse.next();
+  const response = isSupabaseConfigured ? await refreshSession(request) : NextResponse.next();
+  // The Lab and account pages are private: tell search engines not to index them.
+  if (/^\/(lab|account|login)(\/|$)/.test(request.nextUrl.pathname)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+  return response;
+}
 
+async function refreshSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

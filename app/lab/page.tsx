@@ -1,32 +1,41 @@
 import type { Metadata } from "next";
-import { Reveal } from "@/components/motion/Reveal";
+import { Suspense } from "react";
+import { LabByInvitation, LabNotConfigured, LabSignedOut } from "@/components/lab/LabGate";
+import { LabHome } from "@/components/lab/LabHome";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { getLabAccess } from "@/lib/lab/server";
 
 export const metadata: Metadata = { title: "Lab" };
 
-// Placeholder. Sign-in and permissions will be added here later.
-export default function LabPage() {
+export default function LabPage(props: PageProps<"/lab">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
       <PageHeader
         eyebrow="Lab"
         title="The Lab"
-        description="A space for hands-on experiments. Coming soon."
+        description="A private workspace for experiments, tips, notes and snippets."
       />
-      <Reveal delay={0.15}>
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
-          <span className="flex size-12 items-center justify-center rounded-full border border-border bg-background text-accent">
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <rect x="5" y="11" width="14" height="9" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-          </span>
-          <p className="mt-4 font-medium text-foreground">Members only, coming soon</p>
-          <p className="mt-1 max-w-sm text-sm text-muted">
-            Sign-in and access controls will be added before the Lab opens.
-          </p>
-        </div>
-      </Reveal>
+      {/* Who's signed in decides what shows, so this part is rendered per request. */}
+      <Suspense fallback={<div className="h-64 rounded-3xl border border-border bg-surface" />}>
+        <LabIndex searchParams={props.searchParams} />
+      </Suspense>
     </div>
+  );
+}
+
+async function LabIndex({ searchParams }: Pick<PageProps<"/lab">, "searchParams">) {
+  const access = await getLabAccess();
+  if (access.state === "unconfigured") return <LabNotConfigured />;
+  if (access.state === "signed-out") return <LabSignedOut />;
+  if (access.state === "user") return <LabByInvitation request={access.request} />;
+
+  const params = await searchParams;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
+  return (
+    <LabHome
+      supabase={access.supabase}
+      role={access.role}
+      filters={{ q: one(params.q), kind: one(params.kind), collection: one(params.collection) }}
+    />
   );
 }

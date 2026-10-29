@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, UserRound } from "lucide-react";
 import { popover } from "@/lib/motion";
@@ -10,9 +10,8 @@ import { avatarUrl, displayName, useAuth } from "./AuthProvider";
 import { Avatar } from "./Avatar";
 
 /** Header: "Sign in", or the signed-in user's avatar with a small menu. Hidden when accounts aren't set up. */
-export function AccountMenu() {
+export function AccountMenu({ pathname }: { pathname: string | null }) {
   const { configured, loading, user, profile, signOut } = useAuth();
-  const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +33,7 @@ export function AccountMenu() {
   if (loading) return <span className="size-9 rounded-full border border-border bg-surface" aria-hidden />;
 
   if (!user) {
-    const next = pathname.startsWith("/login") ? "/learn" : pathname;
+    const next = !pathname || pathname.startsWith("/login") ? "/learn" : pathname;
     return (
       <Link
         href={`/login?next=${encodeURIComponent(next)}`}

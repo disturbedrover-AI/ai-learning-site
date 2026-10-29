@@ -10,12 +10,22 @@ import { AccountMenu } from "@/components/auth/AccountMenu";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { Logo } from "./Logo";
 
-function isActive(pathname: string, href: string) {
+function isActive(pathname: string | null, href: string) {
+  if (pathname === null) return false;
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
+/** The site header, highlighting the current section. */
 export function Header() {
-  const pathname = usePathname();
+  return <HeaderFrame pathname={usePathname()} />;
+}
+
+/**
+ * The header itself. `pathname` is null while the current address isn't known yet
+ * (private pages render per request): it then shows without a highlighted section.
+ * The root layout uses that as the header's loading state.
+ */
+export function HeaderFrame({ pathname }: { pathname: string | null }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -55,7 +65,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
-          <AccountMenu />
+          <AccountMenu pathname={pathname} />
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}

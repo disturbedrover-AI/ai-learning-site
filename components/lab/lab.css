@@ -1,0 +1,18 @@
+/* Form fields in the Lab editor. Theme colours only. Tailwind classes on a field still win. */
+@layer components {
+  .field {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--background);
+    padding: 0.5rem 0.75rem;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field:focus,
+  .field:focus-within {
+    border-color: var(--accent);
+  }
+}

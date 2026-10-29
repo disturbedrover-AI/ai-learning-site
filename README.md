@@ -8,7 +8,8 @@ intelligence:
 - **News**: curated posts that explain why each story matters, plus a **Radar** of
   fresh headlines pulled automatically from AI blogs and feeds.
 - **Tools**: a hand-picked directory of AI tools, focused on free and open-source ones.
-- **Lab**: a members-only area (coming soon).
+- **Lab**: a private workspace for the owner and invited members (experiments, tips,
+  notes and snippets), stored in Supabase.
 
 Four themes (Light, Dark, Warm Sand, Mist), optional accounts with Supabase, and all
 content kept as plain files in `content/`.
@@ -30,7 +31,7 @@ Then open http://localhost:3000.
 - Settings go in `.env.local` (copy `.env.example`; every variable is explained there).
   All are optional: without them the site runs with no accounts, and progress is
   saved in the browser.
-- To preview draft courses and the "Make this a post" button, run
+- To preview draft courses, run
   `SHOW_DRAFTS=true npm run dev` (or set `SHOW_DRAFTS=true` in `.env.local`).
 - Other commands: `npm run build` (production build), `npm run lint`.
 

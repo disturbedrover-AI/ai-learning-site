@@ -42,9 +42,12 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
   news/               News: Posts and Radar tabs (page.tsx), item pages ([slug]/), RSS feed (rss.xml/).
   api/radar/          GET /api/radar: the Radar headlines as JSON.
   tools/              Tool directory (page.tsx) and tool pages ([slug]/).
-  lab/                Lab placeholder.
+  lab/                The private Lab: home (page.tsx), entries ([slug]/), editor (new/, [slug]/edit/),
+                      members (members/), server actions (actions.tsx).
+  robots.ts sitemap.ts  /robots.txt and /sitemap.xml (public pages only; the Lab is excluded).
 components/
   layout/             Header, Footer, Logo.
+  lab/                LabHome, LabEditor, MembersManager, LabGate, PromoteToLesson, badges, lab.css.
   auth/               AuthProvider (who's signed in), LoginForm, AccountView, AccountMenu, Avatar.
   theme/              Theme provider and theme switcher.
   motion/             Reveal, Stagger/StaggerItem, Lift, Counter: the only animation wrappers.
@@ -69,6 +72,8 @@ lib/
   auth/               providers.ts (sign-in options), roles.ts (role names, hasRole),
                       server.ts (getUser, getRole, requireRole – server only),
                       permissions.ts (canDraftPosts: who sees "Make this a post").
+  lab/                model.ts (kinds, statuses, types, experiment template),
+                      server.ts (getLabAccess, requireLabOwner, entry/member queries).
   site.ts             Site name, description, navigation items.
   themes.ts           List of themes shown in the switcher.
   motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
@@ -316,11 +321,9 @@ Anthropic publishes no official feed, so its entry uses a community-made copy of
 anthropic.com/news (github.com/Olshansk/rss-feeds); if that copy stops updating, disable it.
 Meta's ai.meta.com blog has no feed either, so its official engineering feed is used.
 
-**"Make this a post"** appears on each Radar item when `canDraftPosts()` in
-`lib/auth/permissions.ts` says so: today, only when `SHOW_DRAFTS=true`. It opens a dialog
-with a ready-to-save news file (summary and why-it-matters left blank) and its suggested
-file name, with copy buttons. To make it owner-only later, change that one function to
-`return hasRole(await getRole(), "owner")` (the Radar panel already sits inside `<Suspense>`).
+**"Make this a post"** appears on each Radar item for the site owner only (`canDraftPosts()`
+in `lib/auth/permissions.ts`). It opens a dialog with a ready-to-save news file (summary
+and why-it-matters left blank) and its suggested file name, with copy buttons.
 
 ## Accounts (Supabase)
 
@@ -332,7 +335,7 @@ button and progress stays in the browser.
   (Project Settings → API). The anon key is safe in the browser; row level security protects data.
 - `NEXT_PUBLIC_AUTH_GOOGLE`: Google sign-in is shown unless this is `false`.
 - `NEXT_PUBLIC_AUTH_LINKEDIN`: LinkedIn is hidden until this is `true`.
-- `SHOW_DRAFTS`: show draft courses.
+- `SHOW_DRAFTS`: show draft courses (and the Draft/Published filter on /learn).
 - `NEXT_PUBLIC_SITE_URL`: the site's public address (used in the RSS feed). Optional on
   Vercel: without it, Vercel's own production address is used (`lib/site.ts`).
 Restart `npm run dev` after changing `.env.local`.
@@ -362,13 +365,70 @@ their own profile and progress. Users can change their profile's name and avatar
 - Server: `getRole()` and `requireRole("member", "/lab")` from `lib/auth/server.ts`. Signed out →
   sent to /login (and back afterwards); signed in without the role → /account explains.
   These read cookies, so use them inside `<Suspense>` (Cache Components).
-- Roles change only through the SQL editor (or the service role). To make someone the owner:
+- Roles change through /lab/members (owner only; see "The Lab") or the SQL editor. Users can
+  never change their own role. To make yourself the owner (do this once, after running both
+  migrations), run in the SQL editor:
   ```sql
+  -- Put your sign-in email in both places.
+  insert into public.lab_allowlist (email, role, accepted, accepted_at)
+  values (lower('you@example.com'), 'owner', true, now())
+  on conflict (email) do update set role = 'owner';
+
   update public.profiles
   set role = 'owner'
-  where id = (select id from auth.users where email = 'you@example.com');
+  where id = (select id from auth.users where lower(email) = lower('you@example.com'));
   ```
-  Use `'member'` or `'user'` the same way. They see it after their next page load.
+  If you haven't signed in yet, the first part is enough: you'll become owner on first sign-in.
+  You see it after your next page load.
+
+## The Lab
+
+A private workspace (`/lab`) for the owner and invited members. Its content lives in
+Supabase, not in `content/`, because it's private. Set up by
+`supabase/migrations/20261030120000_lab.sql` (run it in the SQL editor after the accounts
+migration, the same way).
+
+**Who sees what** (checked on the server and again by the database's row level security):
+| Visitor | /lab shows |
+| --- | --- |
+| Signed out | "Members only" and a Sign in button |
+| Signed in, role `user` | "Access is by invitation" and a Request access form |
+| `member` | The Lab, read-only (everything except drafts) |
+| `owner` | The Lab with editing, plus /lab/new, edit pages and /lab/members |
+
+**Data** (Supabase tables):
+- `lab_entries`: `id`, `owner_id`, `kind` (`experiment | tip | note | snippet`), `title`,
+  `slug` (unique, from the title), `body` (Markdown), `status` (`draft | active | done | archived`),
+  `tags` (list), `collection` (optional group, e.g. "Prompting"), `pinned`, `created_at`,
+  `updated_at`, and `search` (full-text index over title, tags and body).
+- `lab_entry_links`: `entry_id`, `url`, `label`, `position` (external references).
+- `lab_allowlist`: `email`, `role` (`member | owner`), `invited_at`, `invited_by`, `accepted`, `accepted_at`.
+- `lab_access_requests`: `user_id`, `email`, `message`, `status` (`pending | approved | declined`).
+- Functions: `lab_invite`, `lab_remove`, `lab_decide_request` (owner only; keep the allowlist and
+  `profiles.role` in step), `lab_request_access` (signed-in users). The sign-up trigger gives
+  invited emails their role automatically.
+
+**Add a member**: /lab/members → enter their email, pick Member (read-only) or Owner (can edit)
+→ Add. If they already have an account it applies at once; otherwise when they first sign in
+with that email. Change a role with the dropdown; Remove sends them back to a plain user.
+Access requests appear at the top with Approve (adds them as a member) and Decline.
+You can't remove or downgrade yourself (so the Lab always has an owner).
+
+**Writing entries** (owner): /lab → New entry. Markdown on the left, live preview on the right;
+it saves automatically a few seconds after you stop typing, and Ctrl/Cmd+S saves straight away.
+New entries start as drafts (members don't see drafts). Experiments start with the template
+sections Goal, Setup, What I tried, Result, Learnings, Next (buttons above the editor insert them).
+Lab text can use the lesson blocks `Definition`, `Example`, `TryIt`, `KeyPoint`, `Explainer`,
+`Term` and `ToolCard` with plain values (`name="…"`), but not `Quiz`, `{…}` code, imports or HTML
+tags: Lab text is stored in the database, so it isn't allowed to run code
+(`components/learn/safeMdx.ts`). Problems show as a notice naming the line.
+
+**Promote to lesson** (owner, on an entry): a ready-to-save `content/lessons/<slug>.mdx` file
+from the entry; then list the slug in a track in a `course.json`.
+
+**Privacy**: Lab pages are rendered per request (never prerendered with content), marked
+`noindex` (page metadata and an `X-Robots-Tag` header from `proxy.ts`), blocked in
+`robots.txt`, and never in the sitemap or RSS feed.
 
 ## Standing rules
 
@@ -386,7 +446,6 @@ their own profile and progress. Users can change their profile's name and avatar
 
 ## Notes
 
-- The Lab page is a placeholder; it isn't gated yet (next step: `requireRole("member")`).
 - The six news items are samples (each file says so in a comment); replace them with real news.
 
 @AGENTS.md
