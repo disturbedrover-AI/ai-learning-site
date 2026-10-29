@@ -17,6 +17,7 @@ developer, so explain changes in simple terms.
 - **@mdx-js/mdx** for lesson files (Markdown + lesson blocks), compiled on the server
 - **lucide-react** for icons
 - **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) for accounts and synced progress
+- **rss-parser** for reading RSS/Atom feeds (the news Radar)
 
 This Next.js version differs from older ones. Read `AGENTS.md` and the docs in
 `node_modules/next/dist/docs/` before using unfamiliar Next.js APIs.
@@ -38,7 +39,8 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
     [course]/         a course's "choose your path" page,
       [track]/        a track's level path,
         [lesson]/     a lesson page.
-  news/               News list (page.tsx), item pages ([slug]/), RSS feed (rss.xml/).
+  news/               News: Posts and Radar tabs (page.tsx), item pages ([slug]/), RSS feed (rss.xml/).
+  api/radar/          GET /api/radar: the Radar headlines as JSON.
   tools/              Tool directory (page.tsx) and tool pages ([slug]/).
   lab/                Lab placeholder.
 components/
@@ -52,24 +54,28 @@ components/
     blocks/           Lesson blocks: Definition, Term, Example, TryIt, KeyPoint, Quiz, Explainer, ToolCard.
     lesson.css        Reading styles for lesson text.
   explainers/         Interactive animated explainers + registry.ts (name → component).
-  news/               NewsCard (with type badge), NewsBrowser (filters, month groups).
+  news/               NewsCard (with type badge), NewsBrowser (filters, month groups),
+                      NewsTabs (Posts/Radar), RadarList, MakePostDialog.
   tools/              ToolParts (logo, badges, platform icons, compact card), ToolsBrowser (filters).
 content/              ALL site content as files (see content/README.md for schemas).
   courses/            One folder per course with course.json (details + tracks), plus _levels.json.
   lessons/            MDX, one file per lesson (a shared pool used by tracks).
   glossary/           JSON, one file per term.
   news/               Markdown, one file per item: <yyyy-mm-dd>-<slug>.md.
+  news-sources.json   Feeds the Radar reads (see "News Radar" below).
   tools/              Markdown, one file per tool: <slug>.md.
 lib/
   supabase/           config.ts (env keys), client.ts (browser), server.ts (server; reads cookies).
   auth/               providers.ts (sign-in options), roles.ts (role names, hasRole),
-                      server.ts (getUser, getRole, requireRole – server only).
+                      server.ts (getUser, getRole, requireRole – server only),
+                      permissions.ts (canDraftPosts: who sees "Make this a post").
   site.ts             Site name, description, navigation items.
   themes.ts           List of themes shown in the switcher.
   motion.ts           ALL animation presets (timings, easing, variants, theme cross-fade).
   content.ts          Reads and validates lessons, glossary, news and tools.
   taxonomy.ts         Fixed lists for news and tools (types, categories, pricing…) with labels and colours.
   related.ts          Links between news, tools and lessons (and checks they exist).
+  radar.ts            Fetches, cleans and caches the Radar feeds (server only).
   courses.ts          Reads and validates courses and tracks; links them to lessons.
   headings.ts         Heading ids and the lesson table of contents.
   levels.ts           levelStyle() / hueStyle(): pick a level or course colour for an element.
@@ -267,6 +273,51 @@ category means adding it there; content files are checked against those lists.
 **Links**: `relatedLesson` / `relatedTool` are checked when the site builds; a typo
 shows an error naming the file. Set `NEXT_PUBLIC_SITE_URL` to the live address so
 links in the RSS feed are correct.
+
+## News Radar
+
+The Radar tab on /news shows automatic headlines from AI blogs and feeds, next to the
+curated Posts. It's handled by `lib/radar.ts`:
+- All enabled sources are fetched in parallel on the server, 5 seconds each at most.
+  A source that fails or doesn't parse is skipped and logged (`[radar] Skipped …` in the
+  terminal); the others still show. If every source fails, the tab says so and Posts work as usual.
+- Items are cleaned up to title, link, source, date, category and a snippet of at most
+  200 characters (no HTML), de-duplicated by link, newest first. Full article text is
+  never stored or shown.
+- Results are cached and refreshed at most once an hour (`"use cache"` + `cacheLife`).
+  `GET /api/radar` returns the same data as JSON for reuse (e.g. the Lab).
+- Home's News card shows the 2 latest Posts and the newest Radar headline.
+
+**Add a source**: add an entry to `content/news-sources.json`:
+```json
+{
+  "name": "Example Lab",
+  "url": "https://example.com/blog/rss.xml",
+  "homepage": "https://example.com/blog",
+  "category": "official",
+  "enabled": true,
+  "limit": 15
+}
+```
+- `url` must be an RSS or Atom feed (check it opens as XML in a browser).
+- `category`: `official` (company and lab blogs), `community`, or `research` (papers).
+- Optional: `limit` (keep only the newest N), `keywords` (keep only items whose title or
+  snippet contains one of the words; used for Hacker News), `snippets: false` (hide feed
+  text that's only boilerplate), `note` (a reminder for you; not shown on the site).
+- Changes show within the hour, or straight away after restarting `npm run dev` or rebuilding.
+
+**Remove a source**: set `"enabled": false` (keeps it for later), or delete its entry.
+
+Current sources: OpenAI, Google DeepMind, Hugging Face, Engineering at Meta (AI research),
+Hacker News front page (AI keywords only), and arXiv cs.AI + cs.LG (newest 10). Anthropic
+publishes no official feed: a community-made copy is listed but disabled; Meta's
+ai.meta.com blog has no feed either, so its official engineering feed is used.
+
+**"Make this a post"** appears on each Radar item when `canDraftPosts()` in
+`lib/auth/permissions.ts` says so: today, only when `SHOW_DRAFTS=true`. It opens a dialog
+with a ready-to-save news file (summary and why-it-matters left blank) and its suggested
+file name, with copy buttons. To make it owner-only later, change that one function to
+`return hasRole(await getRole(), "owner")` (the Radar panel already sits inside `<Suspense>`).
 
 ## Accounts (Supabase)
 

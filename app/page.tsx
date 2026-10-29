@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Newspaper, Wrench } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Newspaper, Radar, Wrench } from "lucide-react";
 import { Constellation } from "@/components/brand/Constellation";
 import { Lift } from "@/components/motion/Lift";
 import { Reveal } from "@/components/motion/Reveal";
@@ -11,6 +11,7 @@ import { formatDate, TypeBadge } from "@/components/news/NewsCard";
 import { ToolLogo } from "@/components/tools/ToolParts";
 import { getTools } from "@/lib/content";
 import { courseStats, getCourses } from "@/lib/courses";
+import { getRadar } from "@/lib/radar";
 import { getCheckedNews } from "@/lib/related";
 import { hueStyle } from "@/lib/levels";
 
@@ -35,11 +36,13 @@ const sections = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
   // Featured: published courses only, even when drafts are being previewed.
   const featured = getCourses({ drafts: false });
   const [learn, news, tools] = sections;
-  const latestNews = getCheckedNews().slice(0, 3);
+  const latestNews = getCheckedNews().slice(0, 2);
+  // The newest automatic headline (cached; empty if the sources couldn't be reached).
+  const radarHeadline = (await getRadar()).items[0];
   const featuredTools = getTools()
     .filter((t) => t.featured)
     .slice(0, 3);
@@ -177,6 +180,22 @@ export default function HomePage() {
                     </Link>
                   </li>
                 ))}
+                {radarHeadline && (
+                  <li className="border-t border-border pt-3">
+                    <a href={radarHeadline.link} target="_blank" rel="noopener noreferrer" className="group/item block">
+                      <span className="flex items-center gap-2 text-xs text-muted">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 font-semibold text-foreground">
+                          <Radar className="size-3" aria-hidden /> Radar
+                        </span>
+                        {radarHeadline.source}
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-sm leading-snug font-medium text-foreground transition-colors group-hover/item:text-accent">
+                        {radarHeadline.title}
+                        <ArrowUpRight className="ml-0.5 inline size-3.5 text-muted" aria-hidden />
+                      </span>
+                    </a>
+                  </li>
+                )}
               </ul>
             </SideCard>
           </StaggerItem>

@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Rss } from "lucide-react";
 import { NewsBrowser } from "@/components/news/NewsBrowser";
 import { NewsCard, type NewsSummary } from "@/components/news/NewsCard";
+import { NewsTabs } from "@/components/news/NewsTabs";
+import { RadarList } from "@/components/news/RadarList";
 import { Lift } from "@/components/motion/Lift";
 import { Reveal } from "@/components/motion/Reveal";
 import { Stagger, StaggerItem } from "@/components/motion/Stagger";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { withoutBody } from "@/lib/content";
+import { canDraftPosts } from "@/lib/auth/permissions";
+import { getRadar, type Radar } from "@/lib/radar";
 import { getCheckedNews } from "@/lib/related";
 
 export const metadata: Metadata = {
@@ -15,10 +20,12 @@ export const metadata: Metadata = {
   alternates: { types: { "application/rss+xml": "/news/rss.xml" } },
 };
 
-export default function NewsPage() {
+export default async function NewsPage() {
   // Only what the cards need, so the full text isn't sent to the browser.
   const items: NewsSummary[] = getCheckedNews().map(withoutBody);
   const featured = items.filter((i) => i.featured);
+  // Cached; fetched from the sources at most once an hour.
+  const radar = await getRadar();
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
@@ -33,29 +40,46 @@ export default function NewsPage() {
         </ButtonLink>
       </Reveal>
 
-      {featured.length > 0 && (
-        <section aria-labelledby="featured-news" className="mb-16">
-          <Reveal>
-            <h2 id="featured-news" className="text-2xl font-bold text-foreground">
-              Featured
-            </h2>
-          </Reveal>
-          <Stagger className="mt-5 grid gap-5 md:grid-cols-2">
-            {featured.map((item) => (
-              <StaggerItem key={item.slug}>
-                <Lift>
-                  <NewsCard item={item} large />
-                </Lift>
-              </StaggerItem>
-            ))}
-          </Stagger>
-        </section>
-      )}
+      <NewsTabs
+        radarCount={radar.items.length}
+        posts={
+          <>
+            {featured.length > 0 && (
+              <section aria-labelledby="featured-news" className="mb-16">
+                <Reveal>
+                  <h2 id="featured-news" className="text-2xl font-bold text-foreground">
+                    Featured
+                  </h2>
+                </Reveal>
+                <Stagger className="mt-5 grid gap-5 md:grid-cols-2">
+                  {featured.map((item) => (
+                    <StaggerItem key={item.slug}>
+                      <Lift>
+                        <NewsCard item={item} large />
+                      </Lift>
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              </section>
+            )}
 
-      <Reveal>
-        <h2 className="mb-5 text-2xl font-bold text-foreground">All news</h2>
-      </Reveal>
-      <NewsBrowser items={items} />
+            <Reveal>
+              <h2 className="mb-5 text-2xl font-bold text-foreground">All news</h2>
+            </Reveal>
+            <NewsBrowser items={items} />
+          </>
+        }
+        radar={
+          // Inside Suspense so the "Make this a post" check can later depend on who's signed in.
+          <Suspense>
+            <RadarPanel radar={radar} />
+          </Suspense>
+        }
+      />
     </div>
   );
+}
+
+async function RadarPanel({ radar }: { radar: Radar }) {
+  return <RadarList radar={radar} canDraft={await canDraftPosts()} />;
 }

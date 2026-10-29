@@ -1,0 +1,78 @@
+[
+  {
+    "name": "OpenAI",
+    "url": "https://openai.com/news/rss.xml",
+    "homepage": "https://openai.com/news/",
+    "category": "official",
+    "enabled": true,
+    "limit": 15
+  },
+  {
+    "name": "Google DeepMind",
+    "url": "https://deepmind.google/blog/rss.xml",
+    "homepage": "https://deepmind.google/discover/blog/",
+    "category": "official",
+    "enabled": true,
+    "limit": 15
+  },
+  {
+    "name": "Hugging Face",
+    "url": "https://huggingface.co/blog/feed.xml",
+    "homepage": "https://huggingface.co/blog",
+    "category": "official",
+    "enabled": true,
+    "limit": 15
+  },
+  {
+    "name": "Meta AI Research",
+    "url": "https://engineering.fb.com/category/ai-research/feed/",
+    "homepage": "https://engineering.fb.com/category/ai-research/",
+    "category": "official",
+    "enabled": true,
+    "limit": 15,
+    "note": "Meta's ai.meta.com blog has no feed; this is Engineering at Meta's official AI research feed."
+  },
+  {
+    "name": "Anthropic",
+    "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml",
+    "homepage": "https://www.anthropic.com/news",
+    "category": "official",
+    "enabled": false,
+    "limit": 15,
+    "note": "Anthropic doesn't publish an official feed. This is a community-made copy of anthropic.com/news (github.com/Olshansk/rss-feeds); set enabled to true to use it."
+  },
+  {
+    "name": "Hacker News",
+    "url": "https://hnrss.org/frontpage",
+    "homepage": "https://news.ycombinator.com",
+    "category": "community",
+    "enabled": true,
+    "keywords": [
+      "AI",
+      "LLM",
+      "GPT",
+      "Claude",
+      "Gemini",
+      "Llama",
+      "OpenAI",
+      "Anthropic",
+      "DeepMind",
+      "machine learning",
+      "neural",
+      "transformer",
+      "diffusion",
+      "Mistral",
+      "Hugging Face"
+    ],
+    "snippets": false,
+    "note": "Front page only, filtered to AI-related titles. Its feed text is just links and points, so no snippet is shown."
+  },
+  {
+    "name": "arXiv (cs.AI, cs.LG)",
+    "url": "https://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG&sortBy=submittedDate&sortOrder=descending&max_results=10",
+    "homepage": "https://arxiv.org/list/cs.AI/recent",
+    "category": "research",
+    "enabled": true,
+    "limit": 10
+  }
+]

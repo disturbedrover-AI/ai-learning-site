@@ -21,6 +21,14 @@ export const NEWS_TYPES = {
 } as const satisfies Record<string, Option>;
 export type NewsType = keyof typeof NEWS_TYPES;
 
+// ---- Radar (automatic headlines from feeds) --------------------------------
+export const RADAR_CATEGORIES = {
+  official: { label: "Official blogs", hue: "blue" },
+  community: { label: "Community", hue: "amber" },
+  research: { label: "Research papers", hue: "rose" },
+} as const satisfies Record<string, Option>;
+export type RadarCategory = keyof typeof RADAR_CATEGORIES;
+
 // ---- Tools ---------------------------------------------------------------
 export const TOOL_CATEGORIES = {
   chat: { label: "Chat", hue: "blue" },
