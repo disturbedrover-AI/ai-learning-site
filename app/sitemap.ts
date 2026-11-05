@@ -11,7 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const url = (path: string) => `${site.url}${path}`;
   const courses = getCourses();
   return [
-    ...["/", "/learn", "/learn/glossary", "/news", "/tools"].map((path) => ({ url: url(path) })),
+    ...["/", "/learn", "/learn/glossary", "/news", "/tools", "/privacy", "/terms"].map((path) => ({ url: url(path) })),
     ...courses.flatMap((course) => [
       // A one-track course's own page just redirects to its track.
       ...(course.tracks.length > 1 ? [{ url: url(`/learn/${course.slug}`) }] : []),

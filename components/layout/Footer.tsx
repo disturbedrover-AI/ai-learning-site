@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { navItems, site } from "@/lib/site";
 
+const legalItems = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+] as const;
+
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border">
@@ -11,7 +16,7 @@ export function Footer() {
         </div>
         <nav aria-label="Footer">
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-            {navItems.map((item) => (
+            {[...navItems, ...legalItems].map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="transition-colors hover:text-foreground">
                   {item.label}
