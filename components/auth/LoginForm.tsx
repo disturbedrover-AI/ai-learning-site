@@ -72,8 +72,8 @@ const reportAuthError = (stage: string, error: AuthErrorLike) => {
   }
 };
 
-/** Only send people back to pages on this site. */
-const safeNext = (next: string | null) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/learn");
+/** Only send people back to pages on this site; otherwise land on the Lab. */
+const safeNext = (next: string | null) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/lab");
 
 export function LoginForm() {
   const params = useSearchParams();
@@ -174,7 +174,24 @@ export function LoginForm() {
             </motion.div>
           ) : (
             <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={popover}>
-              <form onSubmit={sendLink} className="mt-8">
+              {/* Primary: one tap with a social provider (Google, etc.). */}
+              {oauthProviders.length > 0 && (
+                <>
+                  <div className="mt-8 grid gap-3">
+                    {oauthProviders.map((p) => (
+                      <Button key={p.id} onClick={() => signInWith(p.id)} className="w-full">
+                        {providerIcons[p.id]} Continue with {p.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="my-6 flex items-center gap-3 text-xs text-muted" aria-hidden>
+                    <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
+
+              {/* Secondary: the email magic link, always available. */}
+              <form onSubmit={sendLink} className={oauthProviders.length > 0 ? "" : "mt-8"}>
                 <label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email
                 </label>
@@ -188,7 +205,12 @@ export function LoginForm() {
                   placeholder="you@example.com"
                   className="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
                 />
-                <Button type="submit" disabled={status === "sending"} className="mt-4 w-full disabled:opacity-70">
+                <Button
+                  type="submit"
+                  variant={oauthProviders.length > 0 ? "secondary" : "primary"}
+                  disabled={status === "sending"}
+                  className="mt-4 w-full disabled:opacity-70"
+                >
                   {status === "sending" ? (
                     <Loader2 className="size-4 animate-spin" aria-hidden />
                   ) : (
@@ -197,21 +219,6 @@ export function LoginForm() {
                   Email me a sign-in link
                 </Button>
               </form>
-
-              {oauthProviders.length > 0 && (
-                <>
-                  <div className="my-6 flex items-center gap-3 text-xs text-muted" aria-hidden>
-                    <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-                  </div>
-                  <div className="grid gap-3">
-                    {oauthProviders.map((p) => (
-                      <Button key={p.id} variant="secondary" onClick={() => signInWith(p.id)} className="w-full">
-                        {providerIcons[p.id]} Continue with {p.label}
-                      </Button>
-                    ))}
-                  </div>
-                </>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

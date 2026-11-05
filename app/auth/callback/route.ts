@@ -3,9 +3,9 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { isSupabaseReachable, isUnreachableError, markSupabaseUnreachable } from "@/lib/supabase/health";
 
-/** Only send people back to pages on this site. */
+/** Only send people back to pages on this site; otherwise land on the Lab. */
 function safeNext(next: string | null) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/learn";
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/lab";
 }
 
 /**
