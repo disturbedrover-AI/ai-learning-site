@@ -2,7 +2,7 @@ import "server-only";
 import { pingSupabase } from "./config";
 
 // The answer is refreshed in the background every 30 seconds. Only the very first
-// check after the server starts is waited for (at most 3 seconds); after that,
+// check after the server starts is waited for (at most 10 seconds); after that,
 // visitors always get the latest known answer straight away.
 const REFRESH_MS = 30_000;
 let last: { ok: boolean; at: number } | null = null;

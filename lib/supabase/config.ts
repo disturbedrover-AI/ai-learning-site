@@ -8,7 +8,7 @@ export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 /** No Supabase request may take longer than this, so pages never hang on it. */
-export const SUPABASE_TIMEOUT_MS = 3000;
+export const SUPABASE_TIMEOUT_MS = 10000;
 
 /**
  * fetch with the time limit above. Every Supabase client uses it (passed as

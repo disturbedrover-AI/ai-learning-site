@@ -27,10 +27,50 @@ const providerIcons: Record<OAuthProviderId, React.ReactNode> = {
 };
 
 const UNAVAILABLE_MESSAGE = "Accounts are temporarily unavailable. Please try again in a few minutes.";
+const RATE_LIMITED_MESSAGE = "Too many sign-in emails requested. Please wait about an hour and try again.";
 
-/** Supabase didn't answer (network error, paused project, timeout) rather than saying no. */
-const unreachable = (error: { name?: string; status?: number }) =>
-  error.name === "AuthRetryableFetchError" || error.status === 0 || (error.status ?? 0) >= 500;
+type AuthErrorLike = { name?: string; status?: number; code?: string; message?: string };
+
+/**
+ * Supabase didn't answer (network error, paused project, 5xx or a request that ran
+ * out of time) rather than saying no. Only these show the "temporarily unavailable"
+ * fallback; a real auth error (wrong link, rate limit, bad request) shows its own message.
+ */
+const unreachable = (error: AuthErrorLike) =>
+  error.name === "AuthRetryableFetchError" ||
+  error.name === "AbortError" ||
+  error.name === "TimeoutError" ||
+  error.status === 0 ||
+  (error.status ?? 0) >= 500 ||
+  /fetch failed|network|timed? ?out|aborted|ECONN|ENOTFOUND/i.test(error.message ?? "");
+
+/** Supabase is throttling sign-in emails for this address (HTTP 429). */
+const rateLimited = (error: AuthErrorLike) =>
+  error.status === 429 ||
+  error.code === "over_email_send_rate_limit" ||
+  error.code === "over_request_rate_limit" ||
+  /rate limit|only request this (again )?after/i.test(error.message ?? "");
+
+/** Turn a Supabase auth error into the right message for the person signing in. */
+const messageFor = (error: AuthErrorLike) =>
+  unreachable(error) ? UNAVAILABLE_MESSAGE : rateLimited(error) ? RATE_LIMITED_MESSAGE : error.message || UNAVAILABLE_MESSAGE;
+
+/**
+ * Send the real error to the server so it lands in the Vercel logs — the person only
+ * ever sees the friendly message above. Fire-and-forget: it must never block sign-in.
+ */
+const reportAuthError = (stage: string, error: AuthErrorLike) => {
+  try {
+    void fetch("/api/auth-error", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stage, name: error.name, status: error.status, code: error.code, message: error.message }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Never let logging break the sign-in flow.
+  }
+};
 
 /** Only send people back to pages on this site. */
 const safeNext = (next: string | null) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/learn");
@@ -60,7 +100,8 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo() } });
     if (error) {
       setStatus("idle");
-      setError(unreachable(error) ? UNAVAILABLE_MESSAGE : error.message);
+      reportAuthError("otp", error);
+      setError(messageFor(error));
     } else {
       setStatus("sent");
     }
@@ -71,7 +112,10 @@ export function LoginForm() {
     if (!supabase) return;
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: redirectTo() } });
-    if (error) setError(unreachable(error) ? UNAVAILABLE_MESSAGE : error.message);
+    if (error) {
+      reportAuthError("oauth", error);
+      setError(messageFor(error));
+    }
   }
 
   if (unavailable) return <AccountsUnavailable />;
