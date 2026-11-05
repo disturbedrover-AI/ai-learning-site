@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
+import { isSupabaseConfigured, supabaseAnonKey, supabaseFetch, supabaseUrl } from "@/lib/supabase/config";
 
 /**
  * GET /api/keep-alive: called once a day by Vercel Cron (see vercel.json) so the
@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   // Server-side only: never sent to the browser. No session, nothing stored.
   const supabase = createClient(supabaseUrl, process.env.SUPABASE_SECRET_KEY || supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: supabaseFetch },
   });
   const { count, error } = await supabase.from("profiles").select("id", { count: "exact", head: true });
   if (error) {

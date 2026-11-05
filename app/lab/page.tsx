@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { AccountsUnavailable } from "@/components/auth/AccountsUnavailable";
 import { LabByInvitation, LabNotConfigured, LabSignedOut } from "@/components/lab/LabGate";
 import { LabHome } from "@/components/lab/LabHome";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -26,6 +27,7 @@ export default function LabPage(props: PageProps<"/lab">) {
 async function LabIndex({ searchParams }: Pick<PageProps<"/lab">, "searchParams">) {
   const access = await getLabAccess();
   if (access.state === "unconfigured") return <LabNotConfigured />;
+  if (access.state === "unavailable") return <AccountsUnavailable />;
   if (access.state === "signed-out") return <LabSignedOut />;
   if (access.state === "user") return <LabByInvitation request={access.request} />;
 

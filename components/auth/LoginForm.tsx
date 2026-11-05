@@ -9,6 +9,7 @@ import { oauthProviders, type OAuthProviderId } from "@/lib/auth/providers";
 import { popover } from "@/lib/motion";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { AccountsUnavailable } from "./AccountsUnavailable";
 import { displayName, useAuth } from "./AuthProvider";
 
 /** Brand marks, drawn in the current text colour so they suit every theme. */
@@ -25,17 +26,27 @@ const providerIcons: Record<OAuthProviderId, React.ReactNode> = {
   ),
 };
 
+const UNAVAILABLE_MESSAGE = "Accounts are temporarily unavailable. Please try again in a few minutes.";
+
+/** Supabase didn't answer (network error, paused project, timeout) rather than saying no. */
+const unreachable = (error: { name?: string; status?: number }) =>
+  error.name === "AuthRetryableFetchError" || error.status === 0 || (error.status ?? 0) >= 500;
+
 /** Only send people back to pages on this site. */
 const safeNext = (next: string | null) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/learn");
 
 export function LoginForm() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
-  const { configured, loading, user, profile } = useAuth();
+  const { configured, loading, unavailable, user, profile } = useAuth();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState(
-    params.get("error") ? "That sign-in link didn't work. It may have expired or been used already. Try again." : "",
+    params.get("error") === "unavailable"
+      ? UNAVAILABLE_MESSAGE
+      : params.get("error")
+        ? "That sign-in link didn't work. It may have expired or been used already. Try again."
+        : "",
   );
 
   const redirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -49,7 +60,7 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo() } });
     if (error) {
       setStatus("idle");
-      setError(error.message);
+      setError(unreachable(error) ? UNAVAILABLE_MESSAGE : error.message);
     } else {
       setStatus("sent");
     }
@@ -60,8 +71,10 @@ export function LoginForm() {
     if (!supabase) return;
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: redirectTo() } });
-    if (error) setError(error.message);
+    if (error) setError(unreachable(error) ? UNAVAILABLE_MESSAGE : error.message);
   }
+
+  if (unavailable) return <AccountsUnavailable />;
 
   return (
     <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-7 shadow-xl shadow-black/5 sm:p-9">

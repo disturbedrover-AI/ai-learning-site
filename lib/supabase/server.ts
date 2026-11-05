@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "./config";
+import { isSupabaseConfigured, supabaseAnonKey, supabaseFetch, supabaseUrl } from "./config";
 
 /**
  * Supabase for server components, route handlers and server actions, acting as
@@ -13,6 +13,7 @@ export async function getSupabaseServer(): Promise<SupabaseClient | null> {
   if (!isSupabaseConfigured) return null;
   const store = await cookies();
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll: () => store.getAll(),
       setAll: (toSet) => {

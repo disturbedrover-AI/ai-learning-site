@@ -11,7 +11,7 @@ import { Avatar } from "./Avatar";
 
 /** Header: "Sign in", or the signed-in user's avatar with a small menu. Hidden when accounts aren't set up. */
 export function AccountMenu({ pathname }: { pathname: string | null }) {
-  const { configured, loading, user, profile, signOut } = useAuth();
+  const { configured, loading, unavailable, user, profile, signOut } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -28,7 +28,8 @@ export function AccountMenu({ pathname }: { pathname: string | null }) {
     };
   }, [open]);
 
-  if (!configured) return null;
+  // No accounts (not set up, or temporarily unreachable): no Sign in button.
+  if (!configured || unavailable) return null;
   // Same size as the avatar, so the header doesn't jump while we check.
   if (loading) return <span className="size-9 rounded-full border border-border bg-surface" aria-hidden />;
 

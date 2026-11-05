@@ -49,7 +49,8 @@ app/                  Pages. Each folder is a web address (app/learn → /learn)
 components/
   layout/             Header, Footer, Logo.
   lab/                LabHome, LabEditor, MembersManager, LabGate, PromoteToLesson, badges, lab.css.
-  auth/               AuthProvider (who's signed in), LoginForm, AccountView, AccountMenu, Avatar.
+  auth/               AuthProvider (who's signed in), LoginForm, AccountView, AccountMenu, Avatar,
+                      AccountsUnavailable (shown while Supabase is down).
   theme/              Theme provider and theme switcher.
   motion/             Reveal, Stagger/StaggerItem, Lift, Counter: the only animation wrappers.
   brand/              The site's visual motif (Constellation).
@@ -69,7 +70,8 @@ content/              ALL site content as files (see content/README.md for schem
   news-sources.json   Feeds the Radar reads (see "News Radar" below).
   tools/              Markdown, one file per tool: <slug>.md.
 lib/
-  supabase/           config.ts (env keys), client.ts (browser), server.ts (server; reads cookies).
+  supabase/           config.ts (env keys, 3-second fetch, health ping), client.ts (browser),
+                      server.ts (server; reads cookies), health.ts (is Supabase reachable?).
   auth/               providers.ts (sign-in options), roles.ts (role names, hasRole),
                       server.ts (getUser, getRole, requireRole – server only),
                       permissions.ts (canDraftPosts: who sees "Make this a post").
@@ -370,6 +372,23 @@ has a Vercel Cron job that calls `GET /api/keep-alive` once a day at 06:00 UTC; 
 set in the project's environment variables; anything else gets 401. Check runs in Vercel →
 project → Settings → Cron Jobs. To test locally:
 `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/keep-alive`.
+
+**When Supabase is down** (paused project, network problem, or too slow):
+- Every Supabase request has a 3-second limit (`supabaseFetch` in `lib/supabase/config.ts`,
+  used by all clients), so pages never hang on it.
+- Reachability is checked with Supabase's auth health endpoint: on the server by
+  `isSupabaseReachable()` in `lib/supabase/health.ts` (answer refreshed in the background every
+  30 seconds; only the very first check after a restart is waited for), and in the browser by
+  `AuthProvider` (on load, and again when the visitor returns to the tab or reconnects).
+- While it's down: /login, /account and every Lab page show "Accounts are temporarily
+  unavailable, everything else still works" (`components/auth/AccountsUnavailable.tsx`, plus
+  `app/lab/error.tsx` for failures part-way through); owner-only Lab pages redirect to /lab;
+  the header shows no Sign in button; everyone counts as signed out, so progress is saved in
+  the browser and merged into the account on the next sign-in. Lessons, news, tools and the
+  glossary don't touch Supabase and work as normal.
+- New code that calls Supabase should do the same: check `isSupabaseReachable()` (server) or
+  `useAuth().unavailable` (browser) first, and treat network errors (`isUnreachableError`) as
+  "unavailable", not as "signed out" or a crash.
 
 **Data rules** (enforced by the database, not just the site): each user can read and change only
 their own profile and progress. Users can change their profile's name and avatar, never its role.

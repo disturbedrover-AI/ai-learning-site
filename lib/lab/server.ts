@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { isSupabaseReachable, isUnreachableError, markSupabaseUnreachable } from "@/lib/supabase/health";
 import { isRole, type Role } from "@/lib/auth/roles";
 import { LAB_KINDS, LAB_STATUSES, type LabEntry, type LabKind, type LabStatus } from "./model";
 
@@ -15,6 +16,8 @@ import { LAB_KINDS, LAB_STATUSES, type LabEntry, type LabKind, type LabStatus } 
 
 export type LabAccess =
   | { state: "unconfigured" }
+  /** Supabase is configured but not answering (paused, network error, too slow). */
+  | { state: "unavailable" }
   | { state: "signed-out" }
   | {
       state: "user" | "member" | "owner";
@@ -30,10 +33,18 @@ export async function getLabAccess(): Promise<LabAccess> {
   await connection(); // Never prerender: depends on who's signed in.
   const supabase = await getSupabaseServer();
   if (!supabase) return { state: "unconfigured" };
-  const { data } = await supabase.auth.getUser();
+  if (!(await isSupabaseReachable())) return { state: "unavailable" };
+
+  const { data, error } = await supabase.auth.getUser();
+  if (isUnreachableError(error)) return unavailable();
   if (!data.user) return { state: "signed-out" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+  if (isUnreachableError(profileError)) return unavailable();
   const role: Role = isRole(profile?.role) ? profile.role : "user";
   let request = null;
   if (role === "user") {
@@ -47,12 +58,19 @@ export async function getLabAccess(): Promise<LabAccess> {
   return { state: role, user: data.user, role, supabase, request };
 }
 
+function unavailable(): LabAccess {
+  markSupabaseUnreachable();
+  return { state: "unavailable" };
+}
+
 /**
  * For owner-only Lab pages (editor, members). Signed out → /login (then back to
  * `returnTo`); signed in but not the owner → /lab. Always rendered per request.
  */
 export async function requireLabOwner(returnTo: string) {
   const access = await getLabAccess();
+  // /lab explains an outage; there's nothing to sign in to meanwhile.
+  if (access.state === "unavailable") redirect("/lab");
   if (access.state === "signed-out" || access.state === "unconfigured") {
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }

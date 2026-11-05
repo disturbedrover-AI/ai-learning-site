@@ -9,6 +9,7 @@ import { popover } from "@/lib/motion";
 import { useProgress } from "@/components/learn/progress";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { avatarUrl, displayName, useAuth } from "./AuthProvider";
+import { AccountsUnavailable } from "./AccountsUnavailable";
 import { Avatar } from "./Avatar";
 
 const roleNames = { user: "Learner", member: "Member", owner: "Owner" } as const;
@@ -17,14 +18,15 @@ const roleNames = { user: "Learner", member: "Member", owner: "Owner" } as const
 export function AccountView() {
   const router = useRouter();
   const params = useSearchParams();
-  const { configured, loading, user, profile, refreshProfile, signOut } = useAuth();
+  const { configured, loading, unavailable, user, profile, refreshProfile, signOut } = useAuth();
   const progress = useProgress();
 
   // Signed out: go to sign-in, then come back here.
   useEffect(() => {
-    if (configured && !loading && !user) router.replace("/login?next=/account");
-  }, [configured, loading, user, router]);
+    if (configured && !unavailable && !loading && !user) router.replace("/login?next=/account");
+  }, [configured, unavailable, loading, user, router]);
 
+  if (unavailable) return <AccountsUnavailable />;
   if (!configured) {
     return <Panel>Accounts aren&apos;t set up on this site yet.</Panel>;
   }

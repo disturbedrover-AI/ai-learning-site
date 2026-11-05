@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { isSupabaseReachable, isUnreachableError, markSupabaseUnreachable } from "@/lib/supabase/health";
 
 /** Only send people back to pages on this site. */
 function safeNext(next: string | null) {
@@ -28,6 +29,11 @@ export async function GET(request: NextRequest) {
         : { error: new Error("No sign-in code in the link.") };
     if (!error) return NextResponse.redirect(new URL(next, url.origin));
     console.error("Sign-in failed:", error.message);
+    // Supabase didn't answer: say so, rather than blaming the link.
+    if (isUnreachableError(error) || !(await isSupabaseReachable())) {
+      markSupabaseUnreachable();
+      return NextResponse.redirect(new URL(`/login?error=unavailable&next=${encodeURIComponent(next)}`, url.origin));
+    }
   }
   return NextResponse.redirect(new URL(`/login?error=link&next=${encodeURIComponent(next)}`, url.origin));
 }

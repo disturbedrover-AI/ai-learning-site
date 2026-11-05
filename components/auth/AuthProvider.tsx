@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isSupabaseConfigured, pingSupabase } from "@/lib/supabase/config";
 import { isRole, type Role } from "@/lib/auth/roles";
 import { useHydrated } from "@/lib/useHydrated";
 
@@ -14,6 +14,11 @@ type Auth = {
   configured: boolean;
   /** True until we know whether someone is signed in. */
   loading: boolean;
+  /**
+   * Supabase is set up but not answering (paused, network error, too slow). Everyone
+   * then counts as signed out: no Sign in button, progress stays in the browser.
+   */
+  unavailable: boolean;
   user: User | null;
   profile: Profile | null;
   refreshProfile: () => Promise<void>;
@@ -41,6 +46,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
   });
   const [profile, setProfile] = useState<{ userId: string; value: Profile } | null>(null);
+  // null while checking whether Supabase answers.
+  const [reachable, setReachable] = useState<boolean | null>(isSupabaseConfigured ? null : false);
+
+  // Is Supabase answering? Checked on load, and again when the visitor comes back to
+  // the tab or reconnects while it was down.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let cancelled = false;
+    const check = () => pingSupabase().then((ok) => !cancelled && setReachable(ok));
+    void check();
+    const recheck = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    window.addEventListener("online", recheck);
+    document.addEventListener("visibilitychange", recheck);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", recheck);
+      document.removeEventListener("visibilitychange", recheck);
+    };
+  }, []);
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();
@@ -52,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const userId = state.user?.id;
+  const unavailable = reachable === false && isSupabaseConfigured;
+  // While Supabase is down, act as signed out (its data can't be read or saved).
+  const user = unavailable ? null : state.user;
+  const userId = user?.id;
 
   // Loaded outside the auth callback, as Supabase recommends.
   useEffect(() => {
@@ -81,8 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         configured: isSupabaseConfigured,
-        loading: state.loading,
-        user: state.user,
+        loading: isSupabaseConfigured && (reachable === null || (!unavailable && state.loading)),
+        unavailable,
+        user,
         // Only the signed-in user's profile, never a previous user's.
         profile: profile && profile.userId === userId ? profile.value : null,
         refreshProfile,
@@ -99,7 +129,7 @@ export function useAuth(): Auth {
   const hydrated = useHydrated();
   if (!auth) throw new Error("useAuth must be used inside <AuthProvider>.");
   // Until this component has hydrated, report what the server rendered: "still checking".
-  return hydrated ? auth : { ...auth, loading: auth.configured, user: null, profile: null };
+  return hydrated ? auth : { ...auth, loading: auth.configured, unavailable: false, user: null, profile: null };
 }
 
 /** The name to show for a user: their profile name, provider name, or email. */

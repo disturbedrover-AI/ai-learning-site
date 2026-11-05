@@ -8,19 +8,26 @@
 import { revalidatePath } from "next/cache";
 import { LessonBody } from "@/components/learn/LessonBody";
 import { slugify } from "@/lib/headings";
-import { getLabAccess } from "@/lib/lab/server";
+import { getLabAccess, type LabAccess } from "@/lib/lab/server";
 import { LAB_KINDS, LAB_STATUSES, RESERVED_SLUGS, type LabEntryInput } from "@/lib/lab/model";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-/** The owner's Supabase session, or an error result for anyone else. */
-async function ownerOnly() {
-  const access = await getLabAccess();
-  if (access.state !== "owner") return null;
-  return access;
-}
+// A signed-in visitor's access (the owner's, once checked below).
+type OwnerAccess = Extract<LabAccess, { supabase: unknown }>;
 
-const NOT_OWNER = { ok: false as const, error: "Only the Lab owner can do that." };
+/** The owner's session, or the reason this visitor can't make changes. */
+async function ownerOnly(): Promise<{ ok: true; access: OwnerAccess } | { ok: false; error: string }> {
+  const access = await getLabAccess();
+  if (access.state === "owner") return { ok: true, access };
+  return {
+    ok: false,
+    error:
+      access.state === "unavailable"
+        ? "Accounts are temporarily unavailable. Try again in a minute."
+        : "Only the Lab owner can do that.",
+  };
+}
 
 function cleanInput(input: LabEntryInput): LabEntryInput | string {
   const title = input.title.trim().slice(0, 200) || "Untitled";
@@ -43,7 +50,7 @@ function cleanInput(input: LabEntryInput): LabEntryInput | string {
 }
 
 /** A slug from the title that no other entry (or Lab page) uses. */
-async function uniqueSlug(supabase: NonNullable<Awaited<ReturnType<typeof ownerOnly>>>["supabase"], title: string) {
+async function uniqueSlug(supabase: OwnerAccess["supabase"], title: string) {
   const base = slugify(title).split("-").slice(0, 8).join("-") || "entry";
   const { data } = await supabase.from("lab_entries").select("slug").like("slug", `${base}%`);
   const taken = new Set([...(data ?? []).map((r) => r.slug), ...RESERVED_SLUGS]);
@@ -55,8 +62,9 @@ async function uniqueSlug(supabase: NonNullable<Awaited<ReturnType<typeof ownerO
 
 /** Create or update an entry (used by autosave and Ctrl/Cmd+S). */
 export async function saveEntry(raw: LabEntryInput): Promise<Result<{ id: string; slug: string; updatedAt: string }>> {
-  const access = await ownerOnly();
-  if (!access) return NOT_OWNER;
+  const check = await ownerOnly();
+  if (!check.ok) return check;
+  const { access } = check;
   const input = cleanInput(raw);
   if (typeof input === "string") return { ok: false, error: input };
   const { supabase, user } = access;
@@ -95,8 +103,9 @@ export async function saveEntry(raw: LabEntryInput): Promise<Result<{ id: string
 }
 
 export async function deleteEntry(id: string): Promise<Result> {
-  const access = await ownerOnly();
-  if (!access) return NOT_OWNER;
+  const check = await ownerOnly();
+  if (!check.ok) return check;
+  const { access } = check;
   const { error } = await access.supabase.from("lab_entries").delete().eq("id", id);
   if (error) return { ok: false, error: `Couldn't delete: ${error.message}` };
   revalidatePath("/lab");
@@ -105,7 +114,7 @@ export async function deleteEntry(id: string): Promise<Result> {
 
 /** The editor's live preview: the body rendered exactly as the entry page will show it. */
 export async function previewBody(body: string) {
-  if (!(await ownerOnly())) return null;
+  if (!(await ownerOnly()).ok) return null;
   return <LessonBody source={body} file="this entry" safe />;
 }
 
@@ -113,6 +122,7 @@ export async function previewBody(body: string) {
 
 export async function requestAccess(message: string): Promise<Result> {
   const access = await getLabAccess();
+  if (access.state === "unavailable") return { ok: false, error: "Accounts are temporarily unavailable. Try again in a minute." };
   if (access.state !== "user") return { ok: false, error: "Sign in first." };
   const { error } = await access.supabase.rpc("lab_request_access", { p_message: message.trim() || null });
   if (error) return { ok: false, error: error.message };
@@ -121,8 +131,9 @@ export async function requestAccess(message: string): Promise<Result> {
 }
 
 export async function inviteMember(email: string, role: "member" | "owner"): Promise<Result> {
-  const access = await ownerOnly();
-  if (!access) return NOT_OWNER;
+  const check = await ownerOnly();
+  if (!check.ok) return check;
+  const { access } = check;
   const { error } = await access.supabase.rpc("lab_invite", { p_email: email, p_role: role });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/lab/members");
@@ -130,8 +141,9 @@ export async function inviteMember(email: string, role: "member" | "owner"): Pro
 }
 
 export async function removeMember(email: string): Promise<Result> {
-  const access = await ownerOnly();
-  if (!access) return NOT_OWNER;
+  const check = await ownerOnly();
+  if (!check.ok) return check;
+  const { access } = check;
   const { error } = await access.supabase.rpc("lab_remove", { p_email: email });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/lab/members");
@@ -139,8 +151,9 @@ export async function removeMember(email: string): Promise<Result> {
 }
 
 export async function decideRequest(userId: string, approve: boolean): Promise<Result> {
-  const access = await ownerOnly();
-  if (!access) return NOT_OWNER;
+  const check = await ownerOnly();
+  if (!check.ok) return check;
+  const { access } = check;
   const { error } = await access.supabase.rpc("lab_decide_request", { p_user_id: userId, p_approve: approve });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/lab/members");
